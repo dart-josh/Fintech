@@ -176,7 +176,8 @@ type Bundle = {
   title: string;
   category: string;
   addons?: string;
-};
+}; 
+
 
 export const mtn_bundles: Bundle[] = [
   // DAILY / HOT
