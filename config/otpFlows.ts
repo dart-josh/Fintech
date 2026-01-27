@@ -1,4 +1,4 @@
-import { resendEmailCode, sendSignupCode, verifyEmailCode, verifySignupCode } from "@/services/auth.service";
+import { resendEmailCode, resetPassword, sendSignupCode, verifyEmailCode, verifySignupCode } from "@/services/auth.service";
 import { otpService } from "@/services/otp.service";
 
 
@@ -36,15 +36,15 @@ export const otpFlows = {
     resendTime: 60,
     verify: verifySignupCode,
     resend: sendSignupCode,
-    successRoute: "/verify-email-success",
+    successRoute: "/verify-email-success",  
   },
 
-  "reset-email": {
+  "reset-password": {
     title: "Verify email address",
-    subtitle: "We sent a code to",
+    subtitle: "A 6 digit OTP was sent to",
     resendTime: 60,
-    verify: otpService.verifyResetEmail,
-    resend: otpService.resendResetEmail,
+    verify: verifySignupCode,
+    resend: resetPassword,
     successRoute: "/new-password",
   },
 } as const;

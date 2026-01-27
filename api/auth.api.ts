@@ -39,6 +39,9 @@ export const authApi = {
   verifyTxPin: (data: { userId: string, pin: string }) =>
     client.post("/api/auth/verifyTxPin", data),
 
+  resetPassword: (data: { email: string }) =>
+    client.post("/api/auth/send_reset_code", data),
+
   // !
 
   verifyPhoneOTP: (otp: string) => client.post("/auth/verify-phone", { otp }),

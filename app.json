@@ -10,6 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.sample.arigopay",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "We need your location to autofill your address."
       }
@@ -19,14 +21,13 @@
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png",
-        "permissions": [
-          "ACCESS_FINE_LOCATION"
-        ]
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "permissions": ["ACCESS_FINE_LOCATION"],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.sample.arigopay"
+      "package": "com.sample.arigopay",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -55,7 +56,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "c28da80f-8f84-4bce-b9e9-6e26d6c1fb68"
+        "projectId": "df26cd8d-7cbb-4dec-8f5a-3e49ef0e51d2"
       }
     }
   }

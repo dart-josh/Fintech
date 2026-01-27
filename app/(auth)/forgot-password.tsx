@@ -15,6 +15,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { resetPassword } from "@/services/auth.service";
 
 export default function ForgotPasswordScreen() {
   const { colors } = useTheme();
@@ -22,6 +23,20 @@ export default function ForgotPasswordScreen() {
 
   const [email, setEmail] = useState("");
   const canReset = email.length > 3;
+
+  const handleReset = async () => {
+    const res = await resetPassword(email);
+
+    if (res) {
+      router.push({
+        pathname: "/verify-otp",
+        params: {
+          flow: "reset-password",
+          target: email,
+        },
+      });
+    } 
+  }
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -109,6 +124,7 @@ export default function ForgotPasswordScreen() {
       <View style={styles.bottom}>
         <Pressable
           disabled={!canReset}
+          onPress={handleReset}
           style={[
             styles.loginBtn,
             { backgroundColor: canReset ? colors.accent : colors.border },

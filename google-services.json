@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "820095306590",
+    "project_id": "arigo-pay-21f06",
+    "storage_bucket": "arigo-pay-21f06.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:820095306590:android:aeca5d87b818e128cc9dcf",
+        "android_client_info": {
+          "package_name": "com.sample.arigopay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoMTllFftS1Yv9KBhdft--8NHAB8CMCvk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

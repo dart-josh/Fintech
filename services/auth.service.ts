@@ -221,6 +221,32 @@ export async function verifySignupCode(data: {
   }
 }
 
+export async function resetPassword(email: string): Promise<boolean> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  try {
+    showLoading("Sending code");
+
+    const res = await authApi.resetPassword({ email });
+
+    if (!res.status) return false;
+
+    const {setUserId} = useRegisterStore.getState();
+    setUserId(res.userId ?? "");
+
+    return true;
+  } catch (error) {
+    // console.error(":", error);
+    toast.show({
+      type: 'error',
+      message: error.message,
+    })
+    return false;
+  } finally {
+    hideLoading();
+  }
+}
+
 // update login pin
 export async function createLoginPin(data: {
   userId: string;

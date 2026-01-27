@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
+import { registerForPushNotifications } from "@/services/notification.service";
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
@@ -39,13 +40,22 @@ export default function NotificationSettingsScreen() {
     },
     {
       label: "SMS",
-      subtitle:
-        "Receive transaction notification via SMS. Charges may apply.",
+      subtitle: "Receive transaction notification via SMS. Charges may apply.",
       switchValue: smsNotif,
       onToggle: setSmsNotif,
       icon: "message-circle",
     },
   ];
+
+  useEffect(() => {
+    const getToken = async () => {
+      const token = await registerForPushNotifications();
+      console.log(token);
+    };
+    if (appNotif) {
+      getToken();
+    }
+  }, [appNotif]);
 
   return (
     <View
@@ -97,13 +107,20 @@ export default function NotificationSettingsScreen() {
                     { backgroundColor: `${colors.primary}15` },
                   ]}
                 >
-                  <Feather name={item.icon as any} size={18} color={colors.primary} />
+                  <Feather
+                    name={item.icon as any}
+                    size={18}
+                    color={colors.primary}
+                  />
                 </View>
 
                 {/* LABEL + SUBTITLE */}
                 <View style={{ flex: 1 }}>
                   <Text
-                    style={[styles.label, { color: isDark ? colors.text : "#111" }]}
+                    style={[
+                      styles.label,
+                      { color: isDark ? colors.text : "#111" },
+                    ]}
                   >
                     {item.label}
                   </Text>
@@ -119,10 +136,13 @@ export default function NotificationSettingsScreen() {
 
                 {/* SWITCH */}
                 <Switch
-                disabled={item.label === "Email"}
+                  disabled={item.label === "Email"}
                   value={item.switchValue}
                   onValueChange={item.onToggle}
-                  trackColor={{ true: colors.primary, false: isDark ? "#555" : "#ccc" }}
+                  trackColor={{
+                    true: colors.primary,
+                    false: isDark ? "#555" : "#ccc",
+                  }}
                   thumbColor={isDark ? "#fff" : "#fff"}
                 />
               </View>

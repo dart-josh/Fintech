@@ -1,4 +1,5 @@
 export function formatNGPhone(input: string) {
+  
   const digits = input.replace(/\D/g, "");
 
   // remove leading 0 or 234 if user typed it

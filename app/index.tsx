@@ -7,3 +7,9 @@ export default function Index() {
 }
 
 // eas build --platform android --profile production
+
+// eas build -p android --profile preview
+
+// eas build --platform android --profile preview --local
+
+// "usesCleartextTraffic": true

@@ -13,7 +13,7 @@ import { formatNGPhone } from "@/hooks/format.hook";
 import { useToastStore } from "@/store/toast.store";
 
 /* ================= Types ================= */
-export type OTPFlowKey = "signup-email" | "change-pin" | "change-password" | "reset-email" | "login-2fa";
+export type OTPFlowKey = "signup-email" | "change-pin" | "change-password" | "reset-password" | "login-2fa";
 
 /* ================= Config ================= */
 const OTP_LENGTH = 6;

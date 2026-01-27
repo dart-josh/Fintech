@@ -9,8 +9,10 @@ import {
 } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
-import { pinLogin, verifyPin } from "@/services/auth.service";
+import { pinLogin } from "@/services/auth.service";
 import { useRegisterStore } from "@/store/register.store";
+import { useUserStore } from "@/store/user.store";
+import { getInitials } from "@/hooks/format.hook";
 
 const PIN_LENGTH = 6;
 
@@ -52,6 +54,8 @@ export default function EnterPinScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isComplete]);
 
+  const {user} = useUserStore();
+
   return (
     <SafeAreaProvider>
       <View
@@ -67,7 +71,7 @@ export default function EnterPinScreen() {
         <View style={styles.avatarWrapper}>
           <View style={[styles.avatar, { backgroundColor: colors.card }]}>
             <Text style={[styles.avatarText, { color: colors.textPrimary }]}>
-              JA
+              {getInitials(user?.fullname ?? "")}
             </Text>
           </View>
         </View>
@@ -78,7 +82,7 @@ export default function EnterPinScreen() {
         </Text>
 
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-          @joshua.adelooye
+          @{user?.username ?? ""}
         </Text>
 
         {/* ================= PIN ================= */}
