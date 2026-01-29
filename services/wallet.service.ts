@@ -1,4 +1,5 @@
 import { walletApi } from "@/api/wallet.api";
+import { capitalizeFirst, formatNumberSpace } from "@/hooks/format.hook";
 import { useToastStore } from "@/store/toast.store";
 import { useUIStore } from "@/store/ui.store";
 import { useUserStore } from "@/store/user.store";
@@ -55,19 +56,18 @@ export async function transferMoney(data: {
   const toast = useToastStore.getState();
 
   try {
-    showLoading("Transferring...");
+    showLoading("Secure Transfer");
 
-    const res = await walletApi.transfer(data);
+    const res: any = await walletApi.transfer(data);
 
     if (!res.status) return null;
 
     return res.transfer ?? null;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
     });
-    // console.log("--:", error.message);
     return null;
   } finally {
     hideLoading();
@@ -86,17 +86,16 @@ export async function purchaseAirtime(data: {
   try {
     showLoading("Purchasing Airtime");
 
-    const res = await walletApi.purchaseAirtime(data);
+    const res: any = await walletApi.purchaseAirtime(data);
 
     if (!res.status) return null;
 
     return res.receipt ?? null;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
     });
-    // console.log("--:", error.message);
     return null;
   } finally {
     hideLoading();
@@ -116,17 +115,16 @@ export async function purchaseData(data: {
   try {
     showLoading("Purchasing Data");
 
-    const res = await walletApi.purchaseData(data);
+    const res: any = await walletApi.purchaseData(data);
 
     if (!res.status) return null;
 
     return res.receipt ?? null;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
     });
-    // console.log("--:", error.message);
     return null;
   } finally {
     hideLoading();
@@ -146,39 +144,49 @@ export async function withdraw(data: {
   try {
     showLoading("Initiating Withdrawal");
 
-    const res = await walletApi.withdraw(data);
+    const res: any = await walletApi.withdraw(data);
 
     if (!res.status) return null;
 
     return res.receipt ?? null;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
     });
-    // console.log("--:", error.message);
     return null;
   } finally {
     hideLoading();
   }
 }
 
-// 3️⃣ Example: mapping the API response
+//? mapping wallet response
 const mapWalletResponse = (apiResponse: any): WalletDetails => {
   const wallet = apiResponse.wallet;
 
   const mapTx = (tx: any, typeOverride?: string) => ({
     id: tx.id,
-    type: typeOverride ?? tx.type,
+    type: typeOverride
+      ? typeOverride === "airtime"
+        ? `Airtime purchase`
+        : typeOverride === "data"
+          ? "Mobile Data purchase"
+          : capitalizeFirst(typeOverride)
+      : tx.type === "debit"
+        ? "Transfer"
+        : tx.type === "credit"
+          ? "Payment Received"
+          : capitalizeFirst(tx.type),
+
     amount: Number(tx.amount).toFixed(2),
     status: tx.status,
     reference: tx.reference,
     description:
       tx.description ??
       (typeOverride === "airtime"
-        ? `Airtime purchase (${tx.network})`
+        ? `Airtime purchase for ${formatNumberSpace(tx.phone)} (${tx.network})`
         : typeOverride === "data"
-          ? `Data purchase (${tx.plan ?? tx.network})`
+          ? `Data purchase for ${formatNumberSpace(tx.phone)} (${tx.plan ?? tx.network})`
           : typeOverride === "withdrawal"
             ? `Withdrawal to ${tx.account_name} (${tx.bank_name})`
             : ""),
@@ -228,13 +236,10 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
 export async function getWalletDetails(data: {
   userId: string;
 }): Promise<WalletDetails | null> {
-  // const { showLoading, hideLoading } = useUIStore.getState();
   const { setWallet } = useWalletStore.getState();
 
   try {
-    // showLoading("Transferring...");
-
-    const res = await walletApi.getWalletDetails(data);
+    const res: any = await walletApi.getWalletDetails(data);
 
     if (!res.status || !res.wallet) return null;
 
@@ -244,7 +249,6 @@ export async function getWalletDetails(data: {
 
     return wallet;
   } catch (error) {
-    // console.log("--:", error.message);
     return null;
   } finally {
     // hideLoading();
@@ -269,7 +273,7 @@ export async function getUserByPaymentCode(data: {
   payment_code: string;
 }): Promise<string | null> {
   try {
-    const res = await walletApi.getUserByPaymentCode(data);
+    const res: any = await walletApi.getUserByPaymentCode(data);
 
     const user: string = res.user;
 
@@ -287,14 +291,14 @@ export async function addBeneficiary(data: {
   const { showLoading, hideLoading } = useUIStore.getState();
 
   try {
-    showLoading("Transferring...");
+    showLoading("Adding Beneficiary");
 
-    const res = await walletApi.addBeneficiary(data);
+    const res: any = await walletApi.addBeneficiary(data);
 
     const user: Beneficiary = mapBeneficiary(res.beneficiary);
 
     return user;
-  } catch (error) {
+  } catch (error: any) {
     return error.message;
   } finally {
     hideLoading();
@@ -306,9 +310,9 @@ export async function listBeneficiaries(data: {
 }): Promise<Beneficiary[] | null> {
   const { setBeneficiaries } = useUserStore.getState();
   try {
-    const res = await walletApi.listBeneficiaries(data);
+    const res: any = await walletApi.listBeneficiaries(data);
 
-    const beneficiaries: Beneficiary[] = res.beneficiaries.map((b) => ({
+    const beneficiaries: Beneficiary[] = res.beneficiaries.map((b: any) => ({
       id: b.id,
       name: b.full_name,
       paymentCode: b.payment_code,
@@ -340,7 +344,7 @@ export async function getDedicatedAccount(data: {
   userId: string;
 }): Promise<AccountDetails | null> {
   try {
-    const res = await walletApi.getDedicatedAccount(data);
+    const res: any = await walletApi.getDedicatedAccount(data);
 
     if (!res.status) return null;
 
@@ -348,7 +352,6 @@ export async function getDedicatedAccount(data: {
 
     return txDetails;
   } catch (error) {
-    console.log(error);
     return null;
   }
 }
@@ -383,7 +386,7 @@ export async function fundAccount(data: {
 
     return txDetails;
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return null;
   }
 }
@@ -396,20 +399,19 @@ export async function checkTransactionStatus(data: {
 
     return "" + res.status;
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return null;
   }
 }
 
 export async function isDedicatedNubanEnabled(): Promise<boolean> {
   try {
-    const res = await walletApi.isDedicatedNubanEnabled();
+    const res: any = await walletApi.isDedicatedNubanEnabled();
 
     if (!res.status) return false;
 
     return res.enabled;
   } catch (error) {
-    console.log(error);
     return false;
   }
 }

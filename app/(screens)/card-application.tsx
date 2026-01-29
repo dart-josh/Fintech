@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
+import { requestCard } from "@/services/card.service";
+import { useToastStore } from "@/store/toast.store";
 
 export default function CardApplication() {
   const router = useRouter();
@@ -30,16 +32,20 @@ export default function CardApplication() {
   const [email, setEmail] = useState(user?.email ?? "");
 
   const isNotValid = !fullName || !dob || !address || !phone || !email;
+  const toast = useToastStore.getState();
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     // Here you can handle form validation and submission
     if (isNotValid) return;
 
-    router.back();
-    router.push({
-      pathname: "/card-confirmation",
-      params: { fullName, dob, address, phone, email },
+    const res = await requestCard({
+      full_name: fullName, dob, address,  phone, email, userId: user?.id ?? ""
     });
+
+    if (!res) return;
+
+    router.back();
+    toast.show({message: 'Card request submitted', type: 'success'});
   };
 
   return (
@@ -177,6 +183,7 @@ export default function CardApplication() {
               keyboardType="email-address"
               value={email}
               onChangeText={setEmail}
+              readOnly={true}
             />
           </View>
 

@@ -6,7 +6,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { useRegisterStore } from "@/store/register.store";
-import { fetchUser } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 
 export default function SplashScreen() {
   const { colors } = useTheme();

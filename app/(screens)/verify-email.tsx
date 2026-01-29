@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
-import { sendSignupCode, verifyEmail } from "@/services/auth.service";
+import { sendEmailCode } from "@/services/auth.service";
 import { useUserStore } from "@/store/user.store";
 
 /* ======================================================
@@ -32,7 +32,7 @@ export default function EmailVerificationPage() {
 
     if (!userEmail) return;
 
-    const success = await sendSignupCode(userEmail);
+    const success = await sendEmailCode(userEmail);
 
     if (success) {
       router.back();

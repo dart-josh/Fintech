@@ -9,7 +9,7 @@ interface Beneficiary {
 
 // Define the User type
 export type User = {
-  id: string,
+  id: string;
   email: string;
   phone: string;
   emailVerified: boolean;
@@ -18,6 +18,16 @@ export type User = {
   payment_code: string;
   transaction_pin: boolean;
   login_pin: boolean;
+};
+
+export type NotificationMod = {
+  created_at: string;
+  data: any;
+  id: string;
+  is_read: boolean;
+  message: string;
+  title: string;
+  type: string;
 };
 
 export type UserVerification = {
@@ -54,15 +64,38 @@ export type UserVerification = {
   updatedAt: string;
 };
 
+export const mapUser = (data: any): User => ({
+  id: data.id,
+  email: data.email,
+  phone: data.phone,
+  username: data.username,
+  fullname: data.full_name,
+  emailVerified: data.verified_email === "1" || data.verified_email === 1,
+  payment_code: data.payment_code,
+  login_pin: data.login_pin,
+  transaction_pin: data.transaction_pin,
+});
+
+type UserDevice = {
+  platform: string | null;
+  device_token: string | null;
+  is_active: boolean;
+};
 
 // Define the store state and actions
 type UserStore = {
   isAuthenticated: boolean;
   user: User | null;
 
-  beneficiaries: Beneficiary[],
+  beneficiaries: Beneficiary[];
 
-  verificationDetails: UserVerification | null,
+  verificationDetails: UserVerification | null;
+
+  deviceToken: string | null;
+
+  devices: UserDevice[];
+
+  notifications: NotificationMod[];
 
   // Actions
   setUser: (user: User) => void;
@@ -70,8 +103,14 @@ type UserStore = {
   setAuthenticated: (auth: boolean) => void;
 
   setBeneficiaries: (beneficiaries: Beneficiary[]) => void;
-  
+
   setVerificationDetails: (details: UserVerification) => void;
+
+  setDeviceToken: (token: string) => void;
+
+  setDevices: (devices: UserDevice[]) => void;
+
+  setNotification: (notifications: NotificationMod[]) => void;
 };
 
 export const useUserStore = create<UserStore>((set) => ({
@@ -82,11 +121,30 @@ export const useUserStore = create<UserStore>((set) => ({
 
   verificationDetails: null,
 
+  deviceToken: null,
+  devices: [],
+
+  notifications: [],
+
   setUser: (user) => set({ user, isAuthenticated: true }),
-  logout: () => set({ user: null, isAuthenticated: false, beneficiaries: [], verificationDetails: null }),
+  logout: () =>
+    set({
+      user: null,
+      isAuthenticated: false,
+      beneficiaries: [],
+      verificationDetails: null,
+      deviceToken: null,
+      devices: [],
+      notifications: [],
+    }),
   setAuthenticated: (auth) => set({ isAuthenticated: auth }),
 
-  setBeneficiaries: (beneficiaries) => set({beneficiaries}),
+  setBeneficiaries: (beneficiaries) => set({ beneficiaries }),
 
-  setVerificationDetails: (details) => set({verificationDetails: details}),
+  setVerificationDetails: (details) => set({ verificationDetails: details }),
+
+  setDeviceToken: (token) => set({ deviceToken: token }),
+  setDevices: (devices) => set({ devices }),
+
+  setNotification: (notifications) => set({notifications}),
 }));

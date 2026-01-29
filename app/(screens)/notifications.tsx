@@ -13,6 +13,8 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import NoNotifications from "@/components/NoNotification";
+import { useUserStore } from "@/store/user.store";
+import { markAsRead } from "@/services/notification.service";
 
 /* ======================================================
    NOTIFICATIONS PAGE
@@ -23,50 +25,33 @@ export default function NotificationsPage() {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: "1",
-      title: "Payment Received",
-      subtitle: "You have received $250",
-      content: "Your payment of $250 from John Doe has been received.",
-      read: false,
-    },
-    {
-      id: "2",
-      title: "Account Upgrade",
-      subtitle: "You are now on Tier 1",
-      content:
-        "Congratulations! You have successfully upgraded your account to Tier 1.",
-      read: true,
-    },
-    {
-      id: "3",
-      title: "Security Alert",
-      subtitle: "New login from Chrome",
-      content: "A new login was detected from Chrome on Windows at 10:23 AM.",
-      read: false,
-    },
-  ]);
+  const { notifications, setNotification } = useUserStore();
 
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
 
-  const toggleRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
+  const toggleRead = (id: string, is_read: boolean) => {
+    const new_nots = notifications.map((n) =>
+      n.id === id ? { ...n, is_read: true } : n,
     );
+    setNotification(new_nots);
+
+    if (!is_read) markAsRead(id);
   };
 
   const renderNotification = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.notificationCard, { backgroundColor: colors.card }]}
-      onPress={() => setSelectedNotification(item)}
+      onPress={() => {
+        setSelectedNotification(item);
+        toggleRead(item.id, item.is_read);
+      }}
       activeOpacity={0.8}
     >
       <View style={{ flex: 1 }}>
         <Text
           style={{
             fontSize: 16,
-            fontWeight: item.read ? "400" : "700",
+            fontWeight: item.is_read ? "400" : "700",
             color: colors.textPrimary,
           }}
         >
@@ -79,16 +64,16 @@ export default function NotificationsPage() {
             marginTop: 2,
           }}
         >
-          {item.subtitle}
+          {item.message}
         </Text>
       </View>
 
       <TouchableOpacity
-        onPress={() => toggleRead(item.id)}
+        onPress={() => toggleRead(item.id, item.is_read)}
         style={styles.readIconWrapper}
       >
         <Ionicons
-          name={item.read ? "mail-open-outline" : "mail-outline"}
+          name={item.is_read ? "mail-open-outline" : "mail-outline"}
           size={22}
           color={colors.primary}
         />
@@ -121,7 +106,7 @@ export default function NotificationsPage() {
       </View>
 
       {/* Notifications List */}
-      {true ? (
+      {!notifications || notifications.length === 0 ? (
         <NoNotifications />
       ) : (
         <FlatList
@@ -154,7 +139,7 @@ export default function NotificationsPage() {
             {selectedNotification?.title}
           </Text>
           <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
-            {selectedNotification?.content}
+            {selectedNotification?.message}
           </Text>
         </View>
       </Modal>

@@ -1,4 +1,4 @@
-import { supportApi } from "@/api/suport.api";
+import { supportApi } from "@/api/support.api";
 
 export async function storeMessage(data: {
   userId: string;
@@ -19,7 +19,7 @@ export async function getMessages(data: {
   userId: string;
 }): Promise<[]> {
   try {
-    const res = await supportApi.getMessages(data);
+    const res: any = await supportApi.getMessages(data);
     // console.log(res)
     return res.messages;
     // return true;

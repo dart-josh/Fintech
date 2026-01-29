@@ -42,9 +42,9 @@ export default function LoginScreen() {
     const identifier = mode === "phone" ? phone : email.trim();
     try {
       const success = await login({
-        email,
+        identifier,
         password,
-        // mode,
+        mode,
       });
       if (success) {
         router.replace("/home");

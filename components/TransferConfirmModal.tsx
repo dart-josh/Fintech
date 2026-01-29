@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
-import { formatNumberSpace } from "@/hooks/format.hook";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type TransferConfirmModalProps = {
@@ -17,7 +16,7 @@ type TransferConfirmModalProps = {
   amount: number;
   recipientName: string;
   paymentCode: string;
-  userBalance: number;
+  userBalance: string;
   onConfirm: () => void;
 };
 
@@ -30,9 +29,12 @@ export default function TransferConfirmModal({
   userBalance,
   onConfirm,
 }: TransferConfirmModalProps) {
-    const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
+
+  const numericBalance = Number(userBalance.replace(/,/g, ""));
+  const isInsufficient = amount > numericBalance;
 
   const initials = recipientName
     .split(" ")
@@ -44,7 +46,15 @@ export default function TransferConfirmModal({
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.card, paddingBottom: insets.bottom + 12 }]}>
+        <View
+          style={[
+            styles.modal,
+            {
+              backgroundColor: colors.card,
+              paddingBottom: insets.bottom + 12,
+            },
+          ]}
+        >
           {/* Drag Handle */}
           <View style={styles.handle} />
 
@@ -107,23 +117,54 @@ export default function TransferConfirmModal({
 
             <InfoRow
               label="Available Balance"
-              value={`₦${formatNumberSpace(userBalance)}`}
+              value={`₦${userBalance}`}
               colors={colors}
+              highlight={isInsufficient}
             />
           </View>
 
+          {/* Insufficient Warning */}
+          {isInsufficient && (
+            <View
+              style={[
+                styles.warningBox,
+                {
+                  backgroundColor: colors.error + "15",
+                  borderColor: colors.error,
+                },
+              ]}
+            >
+              <Feather name="alert-triangle" size={16} color={colors.error} />
+              <Text style={[styles.warningText, { color: colors.error }]}>
+                Insufficient balance to complete this transfer
+              </Text>
+            </View>
+          )}
+
           {/* Divider */}
-          <View
-            style={[styles.divider, { borderColor: colors.border }]}
-          />
+          <View style={[styles.divider, { borderColor: colors.border }]} />
 
           {/* Confirm Button */}
           <TouchableOpacity
-            style={[styles.confirmBtn, { backgroundColor: colors.primary }]}
+            disabled={isInsufficient}
+            style={[
+              styles.confirmBtn,
+              {
+                backgroundColor: isInsufficient
+                  ? colors.border
+                  : colors.primary,
+              },
+            ]}
             onPress={onConfirm}
           >
-            <Feather name="lock" size={16} color="#fff" />
-            <Text style={styles.confirmText}>Confirm Transfer</Text>
+            <Feather
+              name={isInsufficient ? "alert-triangle" : "lock"}
+              size={16}
+              color="#fff"
+            />
+            <Text style={styles.confirmText}>
+              {isInsufficient ? "Insufficient Balance" : "Confirm Transfer"}
+            </Text>
           </TouchableOpacity>
 
           {/* Cancel */}
@@ -144,14 +185,23 @@ const InfoRow = ({
   label,
   value,
   colors,
+  highlight = false,
 }: {
   label: string;
   value: string;
   colors: any;
+  highlight?: boolean;
 }) => (
   <View style={styles.infoRow}>
     <Text style={{ color: colors.muted }}>{label}</Text>
-    <Text style={{ color: colors.text, fontWeight: "600" }}>{value}</Text>
+    <Text
+      style={{
+        color: highlight ? colors.error : colors.text,
+        fontWeight: "600",
+      }}
+    >
+      {value}
+    </Text>
   </View>
 );
 
@@ -214,6 +264,20 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  warningBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginTop: 14,
+  },
+  warningText: {
+    fontSize: 13,
+    fontWeight: "600",
+    flex: 1,
   },
   divider: {
     borderWidth: 1,

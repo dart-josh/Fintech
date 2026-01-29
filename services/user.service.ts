@@ -1,10 +1,49 @@
 import { userApi } from "@/api/user.api";
+import { useRegisterStore } from "@/store/register.store";
 import { useToastStore } from "@/store/toast.store";
 import { useUIStore } from "@/store/ui.store";
-import { fetchUser } from "./auth.service";
-import { UserVerification, useUserStore } from "@/store/user.store";
+import { mapUser, User, UserVerification, useUserStore } from "@/store/user.store";
+import { getWalletDetails, listBeneficiaries } from "./wallet.service";
 
 const toast = useToastStore.getState();
+
+// fetch user
+export async function fetchUser(userId: string): Promise<User | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  try {
+    const { setUser, setDevices, setNotification } = useUserStore.getState();
+    const { setUserId } = useRegisterStore.getState();
+    showLoading("");
+    const res : any = await userApi.fetchUser({ userId });
+
+    if (!res.user) return null;
+    getWalletDetails({ userId });
+    listBeneficiaries({ userId });
+    getUserVerifications({ userId });
+
+    const user: User = mapUser(res.user);
+    setUser(user);
+    setUserId(user.id);
+
+    const dvs = res.devices.map((d: any) => {
+      return { ...d, is_active: Number(d.is_active) === 1 };
+    });
+    setDevices(dvs);
+
+    const nots = res.notifications.map((not: any) => {
+      return { ...not, is_read: Number(not.is_read) === 1 };
+    });
+    setNotification(nots);
+
+    return user;
+  } catch (error: any) {
+    console.error("Fetch User:", error.message);
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
 
 export async function verifyUserEmail(data: {
   userId: string;
@@ -20,7 +59,7 @@ export async function verifyUserEmail(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -31,6 +70,7 @@ export async function verifyUserEmail(data: {
   }
 }
 
+//? mapping
 export function mapUserVerificationResponse(raw: any): UserVerification {
   const v = raw;
 
@@ -91,7 +131,7 @@ export async function getUserVerifications(data: {
   const { setVerificationDetails } = useUserStore.getState();
 
   try {
-    const res = await userApi.getUserVerifications(data);
+    const res : any = await userApi.getUserVerifications(data);
 
     if (!res.verification) return null;
 
@@ -118,7 +158,7 @@ export async function submitBvn(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error : any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -144,7 +184,7 @@ export async function submitNin(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -174,7 +214,7 @@ export async function submitAddress(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error : any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -204,7 +244,7 @@ export async function submitNok(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error : any) {
     toast.show({
       message: error.message,
       type: "error",

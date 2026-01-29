@@ -6,9 +6,11 @@ import UIProvider from "@/providers/UIProvider";
 import Toast from "@/components/Toast";
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
+import { useToastStore } from "@/store/toast.store";
 
 export default function RootLayout() {
   const router = useRouter();
+  const toast = useToastStore();
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -25,6 +27,12 @@ export default function RootLayout() {
     const receivedSub = Notifications.addNotificationReceivedListener(
       (notification) => {
         console.log("Notification received:", notification.request.content);
+        // Show a simple in-app banner
+        const content = notification.request.content;
+        toast.show({
+          type: "success",
+          message: content.title ?? '',
+        });
       },
     );
 

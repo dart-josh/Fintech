@@ -1,5 +1,6 @@
 // src/store/ui.store.ts
 import { create } from "zustand";
+import * as SecureStore from "expo-secure-store";
 
 type UIState = {
   loading: boolean;
@@ -8,7 +9,7 @@ type UIState = {
 
   showLoading: (text?: string) => void;
   hideLoading: () => void;
-  toggleShowBalance: () => void;
+  toggleShowBalance: (showBalance: boolean) => void;
 };
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -28,8 +29,13 @@ export const useUIStore = create<UIState>((set, get) => ({
       loadingText: undefined,
     }),
 
-  toggleShowBalance: () => {
-    const { showBalance } = get();
-    set({ showBalance: !showBalance });
+  toggleShowBalance: (showBalance) => {
+    set({ showBalance: showBalance });
+    setShowBalance(showBalance);
   },
 }));
+
+const setShowBalance = async (showBalance: boolean) => {
+  await SecureStore.setItemAsync("showBalance", showBalance ? "true" : "false");
+
+}

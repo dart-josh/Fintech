@@ -6,7 +6,7 @@ export default function UIProvider({ children }: { children: ReactNode }) {
   return (
     <>
       {children}
-      <LoadingOverlay />
+        <LoadingOverlay />
     </>
   );
 }

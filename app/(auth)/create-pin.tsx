@@ -8,7 +8,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { useToastStore } from "@/store/toast.store";
-import { createPin, createLoginPin } from "@/services/auth.service";
+import { createLoginPin } from "@/services/auth.service";
 import { useRouter } from "expo-router";
 import { useRegisterStore } from "@/store/register.store";
 
@@ -51,14 +51,12 @@ export default function CreatePinScreen() {
 
   const { userId } = useRegisterStore.getState();
 
-  console.log(userId);
-
   return (
     <SafeAreaProvider>
       <View
         style={[
           styles.screen,
-          { backgroundColor: colors.background, paddingTop: insets.top + 12 },
+          { backgroundColor: colors.background, paddingTop: insets.top + 12, paddingBottom: insets.bottom },
         ]}
       >
         {/* ================= Header ================= */}

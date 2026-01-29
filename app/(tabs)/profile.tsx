@@ -14,8 +14,8 @@ import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
 import { useUserStore } from "@/store/user.store";
 import { getInitials } from "@/hooks/format.hook";
-import * as SecureStore from "expo-secure-store";
 import { BeneficiaryModal } from "@/components/BeneficiaryModal";
+import { logout } from "@/services/auth.service";
 
 /* ======================================================
    PROFILE SCREEN
@@ -78,7 +78,7 @@ export default function ProfileScreen() {
             // { label: "Bank Statement", icon: "file-text", route: "" },
             // { label: "Device Management", icon: "smartphone", route: "" },
             { label: "Contact Us", icon: "help-circle", route: "chat-page" },
-            { label: "Terms & Condition", icon: "file", route: "" },
+            { label: "Terms & Conditions", icon: "file", route: "" },
             { label: "Visit Our Website", icon: "globe", route: "" },
             { label: "Logout", icon: "log-out", danger: true, route: "logout" },
           ]}
@@ -323,7 +323,6 @@ function ActionItem({
   const router = useRouter();
   const { colors } = useTheme();
   const toast = useToastStore.getState();
-  const { logout } = useUserStore();
 
   const iconColor = danger ? colors.error : colors.primary;
   const bgColor = danger ? colors.errorContainer : colors.primaryContainer;
@@ -338,7 +337,6 @@ function ActionItem({
               setModalVisible(true);
             } else if (route === "logout") {
               logout();
-              await SecureStore.deleteItemAsync("userId");
               router.replace("/welcome");
             } else {
               router.push(route);

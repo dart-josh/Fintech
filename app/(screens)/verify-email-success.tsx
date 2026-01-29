@@ -26,15 +26,19 @@ export default function SuccessPage() {
   const isDark = theme === "dark";
 
   useEffect(() => {
-    const {user} = useUserStore.getState();
-    verifyUserEmail({userId: user?.id ?? ""});
+    const { user } = useUserStore.getState();
+    verifyUserEmail({ userId: user?.id ?? "" });
   }, []);
 
   return (
     <View
       style={[
         styles.container,
-        { backgroundColor: isDark ? "#121212" : "#F5F5F5", paddingTop: insets.top },
+        {
+          backgroundColor: isDark ? "#121212" : "#F5F5F5",
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom,
+        },
       ]}
     >
       {/* Top Bar */}
@@ -42,9 +46,16 @@ export default function SuccessPage() {
         <View style={{ flex: 1 }} />
         <TouchableOpacity
           onPress={() => router.push("/chat-page")}
-          style={[styles.messageButton, { backgroundColor: colors.card + "22" }]}
+          style={[
+            styles.messageButton,
+            { backgroundColor: colors.card + "22" },
+          ]}
         >
-          <Ionicons name="chatbubble-ellipses-outline" size={24} color={colors.primary} />
+          <Ionicons
+            name="chatbubble-ellipses-outline"
+            size={24}
+            color={colors.primary}
+          />
         </TouchableOpacity>
       </View>
 

@@ -64,6 +64,7 @@ export default function EnterPinScreen() {
           {
             backgroundColor: colors.background,
             paddingTop: insets.top + 24,
+            paddingBottom: insets.bottom,
           },
         ]}
       >

@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -14,15 +15,18 @@ import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
 import { LinearGradient } from "expo-linear-gradient";
 import { transactions } from "@/utils/globalVariables";
-import { fetchUser } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 import { useRegisterStore } from "@/store/register.store";
 import { useUserStore } from "@/store/user.store";
 import ReceiveMoneyModal from "../(screens)/add-money";
 import * as Clipboard from "expo-clipboard";
 import { useWalletStore } from "@/store/wallet.store";
-import { formatToMonthDay } from "@/hooks/format.hook";
+import { capitalizeFirst, formatToMonthDay } from "@/hooks/format.hook";
 import NoTransaction from "@/components/NoTransaction";
 import { useUIStore } from "@/store/ui.store";
+import { registerForPushNotifications } from "@/services/notification.service";
+import * as SecureStore from "expo-secure-store";
+import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
 
 // MAIN DASHBOARD SCREEN
 
@@ -40,20 +44,19 @@ const DashboardScreen = () => {
 
   const { user, verificationDetails } = useUserStore();
 
+  const [showAccount, setShowAccount] = useState(false);
+
   const [modalVisible, setModalVisible] = useState(false);
 
   const accountName = `${user?.fullname ?? ""} (PAYSTACK)`;
   const accountNumber = "9015153464";
   const bankName = "Paystack wallet";
 
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchUser(userId);
+    await fetchUser(userId);
 
-    // 🔁 Replace with real API calls
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
+    setRefreshing(false);
   }, [userId]);
 
   useEffect(() => {
@@ -63,6 +66,26 @@ const DashboardScreen = () => {
   useEffect(() => {
     setBalanceVisible(showBalance);
   }, [showBalance]);
+
+  useEffect(() => {
+    const getAppPreference = async (): Promise<boolean> => {
+      const value = await SecureStore.getItemAsync("showAppNotif");
+      const showNotif = value === "true";
+      return showNotif;
+    };
+
+    const getToken = async () => {
+      const showNotif = await getAppPreference();
+      if (showNotif) {
+        await registerForPushNotifications();
+      }
+    };
+
+    getToken();
+  }, []);
+
+  const f_name = user?.fullname ? user?.fullname.split(" ")[0] : "";
+  const fname = capitalizeFirst(f_name);
 
   return (
     <View
@@ -82,12 +105,11 @@ const DashboardScreen = () => {
         ]}
       >
         <TopBar
-          username={user?.username ?? ""}
+          firstName={fname}
           verified={verificationDetails?.userVerified ?? false}
           isDark={isDark}
         />
       </View>
-
       {/* SCROLLABLE CONTENT */}
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -111,24 +133,30 @@ const DashboardScreen = () => {
           isDark={isDark}
         />
 
+        <QuickActions isDark={isDark} setModalVisible={setModalVisible} />
+
         <EventBox
           title="ArigoPay Launch Event"
           subtitle="Jan 30, 2026 | 10:00 AM"
         />
 
-        <QuickActions isDark={isDark} setModalVisible={setModalVisible} />
-
         <RecentTransactions isDark={isDark} />
 
         <SpendingInsights isDark={isDark} transactions={transactions} />
       </ScrollView>
-
-      <ReceiveMoneyModal
+      {/* <ReceiveMoneyModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         accountName={accountName}
         accountNumber={accountNumber}
         bankName={bankName}
+      /> */}
+      <DedicatedAccountModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        accountName="Joshua Adelooye"
+        accountNumber="1234567890"
+        bankName="Wema Bank"
       />
     </View>
   );
@@ -155,8 +183,12 @@ export default DashboardScreen;
 /////////////////////// COMPONENTS ///////////////////////
 
 // 1. TOP BAR
-const TopBar = ({ username, verified, isDark }: any) => {
+const TopBar = ({ firstName, verified, isDark }: any) => {
   const router = useRouter();
+  const { notifications } = useUserStore();
+
+  const isUnRead = notifications.filter((not) => !not.is_read);
+  const pendingNots = isUnRead.length > 0;
 
   return (
     <View style={TopBarStyles.container}>
@@ -168,7 +200,7 @@ const TopBar = ({ username, verified, isDark }: any) => {
           style={[TopBarStyles.profileCircle, { backgroundColor: "#4B7BEC" }]}
         >
           <Text style={TopBarStyles.profileInitials}>
-            {username[0]?.toUpperCase() ?? ""}
+            {firstName[0]?.toUpperCase() ?? ""}
           </Text>
         </View>
         {verified && (
@@ -198,7 +230,7 @@ const TopBar = ({ username, verified, isDark }: any) => {
             { color: isDark ? "#fff" : "#000" },
           ]}
         >
-          @{username}
+          {firstName}
         </Text>
       </View>
 
@@ -216,6 +248,7 @@ const TopBar = ({ username, verified, isDark }: any) => {
             color={isDark ? "#fff" : "#555"}
           />
         </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => router.push("/notifications")}
           style={[
@@ -225,7 +258,7 @@ const TopBar = ({ username, verified, isDark }: any) => {
         >
           <View>
             <Feather name="bell" size={20} color={isDark ? "#fff" : "#555"} />
-            <View style={TopBarStyles.notificationDot} />
+            {pendingNots && <View style={TopBarStyles.notificationDot} />}
           </View>
         </TouchableOpacity>
       </View>
@@ -266,6 +299,8 @@ const TopBarStyles = StyleSheet.create({
     right: 0,
   },
 });
+
+const toast = useToastStore.getState();
 
 // 2. WALLET INFO
 const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
@@ -360,7 +395,21 @@ const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={[WalletStyles.button]}
-            onPress={() => router.push("/send")}
+            onPress={() => {
+              if (!user?.transaction_pin) {
+                toast.show({
+                  type: "warning",
+                  message: "Transaction PIN Not set",
+                });
+                Alert.alert(
+                  "Set Transaction PIN",
+                  `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
+                );
+                return;
+              }
+
+              router.push("/send");
+            }}
           >
             <Text style={WalletStyles.buttonText}>Send</Text>
             <Feather
@@ -524,6 +573,7 @@ const verificationStyles = StyleSheet.create({
 // 3. QUICK ACTIONS
 const QuickActions = ({ isDark, setModalVisible }: any) => {
   const toast = useToastStore.getState();
+  const { user } = useUserStore();
   const router = useRouter();
 
   const actions = [
@@ -565,6 +615,24 @@ const QuickActions = ({ isDark, setModalVisible }: any) => {
           <TouchableOpacity
             onPress={() => {
               if (item.route) {
+                if (
+                  item.route === "airtime-top-up" ||
+                  item.route === "data-top-up" ||
+                  item.route === "withdraw" ||
+                  item.label === "Add Money"
+                ) {
+                  if (!user?.transaction_pin) {
+                    toast.show({
+                      type: "warning",
+                      message: "Transaction PIN Not set",
+                    });
+                    Alert.alert(
+                      "Set Transaction PIN",
+                      `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
+                    );
+                    return;
+                  }
+                }
                 if (item.route === "modal") {
                   setModalVisible(true);
                 } else {
@@ -641,7 +709,7 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
       </Text>
 
       {recent.map((tx) => {
-        const isCredit = tx.type === "credit";
+        const isCredit = tx.type === "Payment Received";
 
         return (
           <View
@@ -768,7 +836,7 @@ function SpendingInsights({ isDark, transactions }: Props) {
         { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" },
       ]}
     >
-      <Text style={[InsightsStyles.title, { color: isDark ? "#FFF" : "#000" }]}>
+      <Text style={[InsightsStyles.title, { color: isDark ? "#FFF" : "#000", marginBottom: 30 }]}>
         Spending Insights
       </Text>
 
@@ -789,7 +857,7 @@ function SpendingInsights({ isDark, transactions }: Props) {
                     {
                       height: `${heightPercent}%`,
                       backgroundColor:
-                        item.type === "credit"
+                        item.type === "Payment Received"
                           ? "#22C55E" // credit
                           : "#EF4444", // debit
                     },

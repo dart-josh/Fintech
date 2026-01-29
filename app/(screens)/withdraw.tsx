@@ -19,7 +19,8 @@ import { getBanks, resolveAccount } from "@/api/bank.api";
 import { useUserStore } from "@/store/user.store";
 import { Transaction, useWalletStore } from "@/store/wallet.store";
 import { useToastStore } from "@/store/toast.store";
-import { fetchUser, verifyTxPin } from "@/services/auth.service";
+import { verifyTxPin } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 import { withdraw } from "@/services/wallet.service";
 import PinModal from "@/components/PinModal";
 import WithdrawalModal from "@/components/WithdrawalModal";
@@ -95,6 +96,8 @@ export default function WithdrawScreen() {
 
   const toast = useToastStore.getState();
 
+  const [isLoading, setIsLoading] = useState(false);
+
   const handleWithdraw = () => {
     setWithdrawModal(false);
     if (user?.transaction_pin) {
@@ -110,10 +113,12 @@ export default function WithdrawScreen() {
   };
 
   const handlePinComplete = async (pin: string) => {
+    setIsLoading(true);
     setPinError("");
     const pinValid = await verifyPin(pin);
 
     if (!pinValid) {
+      setIsLoading(false);
       setPinError("Invalid PIN");
       Vibration.vibrate(200);
       return;
@@ -131,6 +136,7 @@ export default function WithdrawScreen() {
         account_name: accountName,
       });
 
+      setIsLoading(false);
       setPinVisible(false);
       setPinError("");
 
@@ -161,6 +167,7 @@ export default function WithdrawScreen() {
       setPinError("Invalid PIN");
       Vibration.vibrate(200);
     } finally {
+      setIsLoading(false);
       setLoading(false);
     }
   };
@@ -474,7 +481,7 @@ export default function WithdrawScreen() {
               }}
             >
               {selectedBank?.name && accountNumber.length !== 10
-                ? ""
+                ? "Enter account number"
                 : selectedBank?.name || "Select bank"}
             </Text>
           </TouchableOpacity>
@@ -539,6 +546,7 @@ export default function WithdrawScreen() {
         onClose={() => setPinVisible(false)}
         onComplete={handlePinComplete}
         error={pinError}
+        isLoading={isLoading}
       />
     </KeyboardAvoidingView>
   );

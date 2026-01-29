@@ -18,7 +18,8 @@ import PaymentModal from "@/components/PaymentModal";
 import { formatNumberSpace } from "@/hooks/format.hook";
 import { useRouter } from "expo-router";
 import PinModal from "@/components/PinModal";
-import { fetchUser, verifyTxPin } from "@/services/auth.service";
+import { verifyTxPin } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 import { useUserStore } from "@/store/user.store";
 import { useToastStore } from "@/store/toast.store";
 import { purchaseAirtime } from "@/services/wallet.service";
@@ -30,10 +31,14 @@ export default function AirtimeTopUp() {
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
 
+  const { user } = useUserStore.getState();
+
+  const myPhone = user?.phone ? `0${user?.phone}` : "";
+
   const [network, setNetwork] = useState(NETWORKS[0]);
   const [networkModal, setNetworkModal] = useState(false);
   const [amount, setAmount] = useState("");
-  const [number, setNumber] = useState("");
+  const [number, setNumber] = useState(myPhone);
 
   const [payModal, setPayModal] = useState(false);
 
@@ -41,12 +46,14 @@ export default function AirtimeTopUp() {
   const [pinError, setPinError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { user } = useUserStore.getState();
+  
 
   const { wallet } = useWalletStore();
   const userBalance = wallet?.balance ?? "";
 
   const toast = useToastStore.getState();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -63,10 +70,12 @@ export default function AirtimeTopUp() {
   };
 
   const handlePinComplete = async (pin: string) => {
+    setIsLoading(true);
     setPinError("");
     const pinValid = await verifyPin(pin);
 
     if (!pinValid) {
+      setIsLoading(false);
       setPinError("Invalid PIN");
       Vibration.vibrate(200);
       return;
@@ -83,6 +92,7 @@ export default function AirtimeTopUp() {
         network: network.key,
       });
 
+      setIsLoading(false);
       setPinVisible(false);
       setPinError("");
 
@@ -113,6 +123,7 @@ export default function AirtimeTopUp() {
       Vibration.vibrate(200);
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -249,6 +260,7 @@ export default function AirtimeTopUp() {
           onClose={() => setPinVisible(false)}
           onComplete={handlePinComplete}
           error={pinError}
+          isLoading={isLoading}
         />
       )}
     </View>

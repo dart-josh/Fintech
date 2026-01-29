@@ -12,7 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
-import { sendSignupCode } from "@/services/auth.service";
+import { sendEmailCode } from "@/services/auth.service";
 import { useUIStore } from "@/store/ui.store";
 
 export default function SecurityScreen() {
@@ -103,7 +103,7 @@ export default function SecurityScreen() {
                 onPress={() => {
                   if (item.route) {
                     if (item.route === "/change-password") {
-                      sendSignupCode(user?.email ?? "");
+                      sendEmailCode(user?.email ?? "");
                       router.push({
                         pathname: "/verify-otp",
                         params: {
@@ -113,7 +113,7 @@ export default function SecurityScreen() {
                         },
                       });
                     } else if (item.route === "/change-pin") {
-                      sendSignupCode(user?.email ?? "");
+                      sendEmailCode(user?.email ?? "");
                       router.push({
                         pathname: "/verify-otp",
                         params: {
@@ -161,7 +161,7 @@ export default function SecurityScreen() {
                     onValueChange={(val) =>
                       item.label === "Use Face ID / Fingerprint"
                         ? setUseBiometrics(val)
-                        : toggleShowBalance()
+                        : toggleShowBalance(val)
                     }
                     trackColor={{
                       true: colors.primary,

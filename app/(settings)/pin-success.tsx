@@ -27,6 +27,7 @@ export default function PinSuccessPage() {
         {
           backgroundColor: isDark ? "#0F0F0F" : "#F6F7FB",
           paddingTop: insets.top,
+          paddingBottom: insets.bottom,
         },
       ]}
     >

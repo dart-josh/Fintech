@@ -9,6 +9,7 @@ import {
   Text,
   Dimensions,
   Platform,
+  Alert,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -17,6 +18,7 @@ import { useToastStore } from "@/store/toast.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserStore } from "@/store/user.store";
 import ReceiveMoneyModal from "../(screens)/add-money";
+import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -105,12 +107,12 @@ export default function TabsLayout() {
         />
       </Tabs>
 
-      <ReceiveMoneyModal
+      <DedicatedAccountModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        accountName={accountName}
-        accountNumber={accountNumber}
-        bankName={bankName}
+        accountName="Joshua Adelooye"
+        accountNumber="1234567890"
+        bankName="Wema Bank"
       />
 
       {/* CENTER FAB */}
@@ -122,8 +124,6 @@ export default function TabsLayout() {
         onClose={() => setOpen(false)}
         setModalVisible={setModalVisible}
       />
-
-      
     </>
   );
 }
@@ -213,6 +213,8 @@ function QuickActionModal({
   );
 }
 
+
+
 /* ======================================================
    GRID ITEM
 ====================================================== */
@@ -233,11 +235,33 @@ function ActionItem({
   const toast = useToastStore.getState();
   const router = useRouter();
 
+  const { user } = useUserStore.getState();
+
   return (
     <TouchableOpacity
       style={modalStyles.item}
       onPress={async () => {
         if (route) {
+          if (
+            route === "send" ||
+            route === "airtime-top-up" ||
+            route === "data-top-up" ||
+            route === "withdraw" ||
+            label === "Top Up"
+          ) {
+            if (!user?.transaction_pin) {
+              toast.show({
+                type: "warning",
+                message: "Transaction PIN Not set",
+              });
+              Alert.alert(
+                "Set Transaction PIN",
+                `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
+              );
+              return;
+            }
+          }
+
           if (route === "modal") {
             onClose();
             setModalVisible(true);

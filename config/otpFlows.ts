@@ -1,5 +1,4 @@
-import { resendEmailCode, resetPassword, sendSignupCode, verifyEmailCode, verifySignupCode } from "@/services/auth.service";
-import { otpService } from "@/services/otp.service";
+import { resetPassword, sendEmailCode, verifyEmailCode } from "@/services/auth.service";
 
 
 export const otpFlows = {
@@ -7,8 +6,8 @@ export const otpFlows = {
     title: "Verify email address",
     subtitle: "A 6 digit OTP was sent to",
     resendTime: 30,
-    verify: verifySignupCode,
-    resend: sendSignupCode,
+    verify: verifyEmailCode,
+    resend: sendEmailCode,
     successRoute: "/onboarding",
   },
 
@@ -16,8 +15,8 @@ export const otpFlows = {
     title: "Verify email address",
     subtitle: "A 6 digit OTP was sent to",
     resendTime: 30,
-    verify: verifySignupCode,
-    resend: sendSignupCode,
+    verify: verifyEmailCode,
+    resend: sendEmailCode,
     successRoute: "/change-pin",
   },
 
@@ -25,8 +24,8 @@ export const otpFlows = {
     title: "Verify email address",
     subtitle: "A 6 digit OTP was sent to",
     resendTime: 30,
-    verify: verifySignupCode,
-    resend: sendSignupCode,
+    verify: verifyEmailCode,
+    resend: sendEmailCode,
     successRoute: "/change-password",
   },
 
@@ -34,8 +33,8 @@ export const otpFlows = {
     title: "Verify email address",
     subtitle: "A 6 digit OTP was sent to",
     resendTime: 60,
-    verify: verifySignupCode,
-    resend: sendSignupCode,
+    verify: verifyEmailCode,
+    resend: sendEmailCode,
     successRoute: "/verify-email-success",  
   },
 
@@ -43,7 +42,7 @@ export const otpFlows = {
     title: "Verify email address",
     subtitle: "A 6 digit OTP was sent to",
     resendTime: 60,
-    verify: verifySignupCode,
+    verify: verifyEmailCode,
     resend: resetPassword,
     successRoute: "/new-password",
   },

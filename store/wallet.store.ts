@@ -3,7 +3,7 @@ import { create } from "zustand";
 // 1️⃣ Define the transaction type
 export type Transaction = {
   id: string;
-  type: "credit" | "debit" | "transfer";
+  type: string;
   amount: string; // formatted as string with 2 decimals
   status: "pending" | "success" | "failed";
   reference: string | null;
@@ -35,10 +35,12 @@ type WalletStore = {
 
   // Actions
   setWallet: (wallet: WalletDetails) => void;
+  clearWallet: () => void;
 };
 
 export const useWalletStore = create<WalletStore>((set) => ({
   wallet: null,
 
   setWallet: (wallet) => set({ wallet }),
+  clearWallet: () => set({wallet: null}),
 }));

@@ -9,12 +9,14 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LoadingOverlay from "./LoadingOverlay";
 
 type PinModalProps = {
   visible: boolean;
   onClose: () => void;
   onComplete: (pin: string) => void;
   error?: string;
+  isLoading: boolean
 };
 
 const PIN_LENGTH = 6;
@@ -24,6 +26,7 @@ export default function PinModal({
   onClose,
   onComplete,
   error,
+  isLoading,
 }: PinModalProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -118,6 +121,8 @@ export default function PinModal({
             })}
           </View>
         </View>
+
+        {isLoading && <LoadingOverlay/>}
       </View>
     </Modal>
   );

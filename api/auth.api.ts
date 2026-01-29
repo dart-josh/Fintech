@@ -1,22 +1,19 @@
-// api/auth.api.ts
 
 import client from "./client";
 
 export const authApi = {
-  fetchUser: (data: { userId: string }) =>
-    client.post("/api/user/me", data),
 
-  login: (data: { email: string, password: string }) =>
+  login: (data: { identifier: string, password: string, mode: 'email' | 'phone' }) =>
     client.post("/api/auth/login", data),
 
   pinLogin: (data: { userId: string, pin: string }) =>
     client.post("/api/auth/login/pin", data),
 
-  sendSignUpCode: (data: { email: string }) =>
-    client.post("/api/auth/send_sign_up_code", data),
+  sendEmailCode: (data: { email: string }) =>
+    client.post("/api/auth/send_email_code", data),
 
-  verifySignUpCode: (data: { email: string, code: string }) =>
-    client.post("/api/auth/verify_sign_up_code", data),
+  verifyEmailCode: (data: { email: string, code: string }) =>
+    client.post("/api/auth/verify_email_code", data),
 
   registerUser: (data: {
     full_name: string;
@@ -42,13 +39,7 @@ export const authApi = {
   resetPassword: (data: { email: string }) =>
     client.post("/api/auth/send_reset_code", data),
 
-  // !
+  logoutDevice: (data: { userId: string, token: string }) =>
+    client.post("/api/auth/logout", data),
 
-  verifyPhoneOTP: (otp: string) => client.post("/auth/verify-phone", { otp }),
-
-  resendPhoneOTP: () => client.post("/auth/resend-phone"),
-
-  verifyResetOTP: (otp: string) => client.post("/auth/verify-reset", { otp }),
-
-  resendResetOTP: (otp: string) => client.post("/auth/verify-reset", { otp }),
 };

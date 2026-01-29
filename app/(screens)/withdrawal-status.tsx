@@ -24,6 +24,21 @@ export default function WithdrawalStatusPage() {
     method: params.method ?? "Bank Withdrawal",
   };
 
+  const handleShareReceipt = async () => {
+    router.push({
+      pathname: "/receipt",
+      params: {
+        id: `tf-${receipt.date}`,
+        type: 'Withdrawal',
+        amount: receipt.amount.replace(/,/g, ""),
+        status: receipt.status,
+        reference: receipt.reference,
+        description: `Withdrawal to ${receipt.account_name} (${receipt.bank_name})`,
+        date: receipt.date,
+      },
+    });
+  };
+
   const statusConfig = {
     success: {
       icon: "check-circle",
@@ -142,7 +157,7 @@ export default function WithdrawalStatusPage() {
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.secondaryBtn, { backgroundColor: colors.surface }]}
-              onPress={() => console.log("Share receipt")}
+              onPress={handleShareReceipt}
             >
               <Text style={[styles.secondaryText, { color: colors.accent }]}>
                 Share Receipt

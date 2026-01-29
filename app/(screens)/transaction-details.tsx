@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
@@ -36,23 +36,37 @@ export default function TransactionDetails() {
   const { id, type, amount, status, reference, description, date } =
     useLocalSearchParams<{
       id: string;
-      type: "credit" | "debit" | "transfer";
+      type: string;
       amount: string;
       status: "pending" | "success" | "failed";
       reference: string;
       description: string;
       date: string;
     }>();
-
-  const isCredit = type === "credit";
+  const isCredit = type === "Payment Received";
   const statusStyle = statusConfig[status];
-
   const formattedAmount = Number(amount).toLocaleString();
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(reference);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  /* ---------------- Share Logic ---------------- */
+  const handleShareReceipt = async () => {
+    router.push({
+      pathname: "/receipt",
+      params: {
+        id,
+        type,
+        amount,
+        status,
+        reference,
+        description,
+        date,
+      },
+    });
   };
 
   return (
@@ -82,101 +96,126 @@ export default function TransactionDetails() {
         </TouchableOpacity>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Amount Header */}
-          <View style={{ alignItems: "center", marginVertical: 32 }}>
-            <Text
-              style={{
-                fontSize: 30,
-                fontWeight: "800",
-                color: isCredit ? "#16A34A" : colors.textPrimary,
-                marginBottom: 8,
-              }}
-            >
-              {isCredit ? "+" : "-"}₦{formattedAmount}
-            </Text>
-
-            <View
-              style={{
-                paddingHorizontal: 14,
-                paddingVertical: 6,
-                borderRadius: 20,
-                backgroundColor: statusStyle.bg,
-              }}
-            >
-              <Text
-                style={{
-                  color: statusStyle.color,
-                  fontWeight: "700",
-                  fontSize: 12,
-                }}
-              >
-                {statusStyle.label}
-              </Text>
-            </View>
-          </View>
-
-          {/* Details Card */}
-          <View
-            style={{
-              backgroundColor: colors.card,
-              borderRadius: 18,
-              padding: 20,
-              borderWidth: 0.5,
-              borderColor: colors.border,
-              marginBottom: 28,
-            }}
-          >
-            <DetailRow
-              label="Description"
-              value={description}
-              colors={colors}
-            />
-            <DetailRow
-              label="Date"
-              value={formatCurrentDate(date)}
-              colors={colors}
-            />
-
-            {/* Copyable Reference */}
-            <TouchableOpacity onPress={handleCopy}>
-              <DetailRow
-                label="Reference"
-                value={reference}
-                mono
-                colors={colors}
-              />
-              {copied && (
+          {/* 🔥 RECEIPT WRAP START */}
+            <View>
+              {/* Amount Header */}
+              <View style={{ alignItems: "center", marginVertical: 32 }}>
                 <Text
                   style={{
-                    fontSize: 12,
-                    color: "#16A34A",
-                    marginTop: -6,
-                    textAlign: "right",
+                    fontSize: 30,
+                    fontWeight: "800",
+                    color: isCredit ? "#16A34A" : colors.textPrimary,
+                    marginBottom: 8,
                   }}
                 >
-                  Copied ✓
+                  {isCredit ? "+" : "-"}₦{formattedAmount}
                 </Text>
-              )}
-            </TouchableOpacity>
 
-            <DetailRow
-              label="Type"
-              value={isCredit ? "Credit" : "Debit"}
-              colors={colors}
-            />
+                <View
+                  style={{
+                    paddingHorizontal: 14,
+                    paddingVertical: 6,
+                    borderRadius: 20,
+                    backgroundColor: statusStyle.bg,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: statusStyle.color,
+                      fontWeight: "700",
+                      fontSize: 12,
+                    }}
+                  >
+                    {statusStyle.label}
+                  </Text>
+                </View>
+              </View>
 
-            {!isCredit && (
-              <DetailRow label="Fees" value="₦0.00" colors={colors} />
-            )}
+              {/* Details Card */}
+              <View
+                style={{
+                  backgroundColor: colors.card,
+                  borderRadius: 18,
+                  padding: 20,
+                  borderWidth: 0.5,
+                  borderColor: colors.border,
+                  marginBottom: 28,
+                }}
+              >
+                <DetailRow
+                  label="Description"
+                  value={description}
+                  colors={colors}
+                />
+                <DetailRow
+                  label="Date"
+                  value={formatCurrentDate(date)}
+                  colors={colors}
+                />
 
-            <DetailRow
-              label={isCredit ? "Total Received" : "Total Paid"}
-              value={`₦${formattedAmount}`}
-              bold
-              colors={colors}
-            />
-          </View>
+                <TouchableOpacity onPress={handleCopy}>
+                  <DetailRow
+                    label="Reference"
+                    value={reference}
+                    mono
+                    colors={colors}
+                  />
+                  {copied && (
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: "#16A34A",
+                        marginTop: -6,
+                        textAlign: "right",
+                      }}
+                    >
+                      Copied ✓
+                    </Text>
+                  )}
+                </TouchableOpacity>
+
+                <DetailRow
+                  label="Type"
+                  value={type}
+                  colors={colors}
+                />
+
+                {!isCredit && (
+                  <DetailRow label="Fees" value="₦0.00" colors={colors} />
+                )}
+
+                <DetailRow
+                  label={isCredit ? "Total Received" : "Total Paid"}
+                  value={`₦${formattedAmount}`}
+                  bold
+                  colors={colors}
+                />
+              </View>
+            </View>
+          {/* 🔥 RECEIPT WRAP END */}
         </ScrollView>
+
+        {/* Share Button */}
+        <TouchableOpacity
+          onPress={handleShareReceipt}
+          style={{
+            marginBottom: insets.bottom + 12,
+            backgroundColor: colors.primary,
+            paddingVertical: 14,
+            borderRadius: 999,
+            alignItems: "center",
+          }}
+        >
+          <Text
+            style={{
+              color: "#fff",
+              fontWeight: "700",
+              fontSize: 16,
+            }}
+          >
+            Share Receipt
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaProvider>
   );
@@ -205,11 +244,7 @@ const DetailRow = ({
       gap: 12,
     }}
   >
-    <Text
-      style={{ color: colors.textSecondary, fontSize: 14}}
-    >
-      {label}
-    </Text>
+    <Text style={{ color: colors.textSecondary, fontSize: 14 }}>{label}</Text>
     <Text
       style={{
         color: colors.textPrimary,
@@ -217,7 +252,7 @@ const DetailRow = ({
         fontWeight: bold ? "700" : "500",
         fontFamily: mono ? "monospace" : undefined,
         flex: 1,
-        textAlign: 'right'
+        textAlign: "right",
       }}
       numberOfLines={4}
       ellipsizeMode="tail"

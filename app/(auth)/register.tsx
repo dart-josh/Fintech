@@ -15,7 +15,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { sendSignupCode } from "@/services/auth.service";
+import { sendEmailCode } from "@/services/auth.service";
 import { useToastStore } from "@/store/toast.store";
 import { useRegisterStore } from "@/store/register.store";
 
@@ -31,7 +31,7 @@ export default function SignupScreen() {
   const handleRegister = async () => {
     const toast = useToastStore.getState();
     const register_store = useRegisterStore.getState();
-    const success = await sendSignupCode(email);
+    const success = await sendEmailCode(email);
 
     if (success) {
       register_store.setContact({email, phone});

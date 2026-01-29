@@ -1,47 +1,29 @@
-// services/auth.service.ts
 import { authApi } from "@/api/auth.api";
 import { useRegisterStore } from "@/store/register.store";
 import { useToastStore } from "@/store/toast.store";
 import { useUIStore } from "@/store/ui.store";
-import { User, useUserStore } from "@/store/user.store";
+import { mapUser, User, useUserStore } from "@/store/user.store";
 import * as SecureStore from "expo-secure-store";
-import { getWalletDetails, listBeneficiaries } from "./wallet.service";
-import { getUserVerifications } from "./user.service";
-
-type RegisterDetailsPayload = {
-  username: string;
-  referral: string | undefined;
-  password: string;
-};
+import { fetchUser } from "./user.service";
+import { useWalletStore } from "@/store/wallet.store";
 
 const toast = useToastStore.getState();
 
-const mapUser = (data: any): User => ({
-  id: data.id,
-  email: data.email,
-  phone: data.phone,
-  username: data.username,
-  fullname: data.full_name,
-  emailVerified: data.verified_email === "1" || data.verified_email === 1,
-  payment_code: data.payment_code,
-  login_pin: data.login_pin,
-  transaction_pin: data.transaction_pin,
-});
-
 export async function login(data: {
-  email: string;
+  identifier: string;
   password: string;
+  mode: 'email' | 'phone'
 }): Promise<User | null> {
   const { showLoading, hideLoading } = useUIStore.getState();
 
   try {
     const { setUser } = useUserStore.getState();
     const { setUserId } = useRegisterStore.getState();
-    showLoading("");
+    showLoading("Secure login");
 
-    const res = await authApi.login(data);
+    const res: any = await authApi.login(data);
 
-    if (!res["user"]) return null;
+    if (!res.user) return null;
 
     const user: User = mapUser(res.user);
 
@@ -68,9 +50,9 @@ export async function pinLogin(data: {
   try {
     const { setUser } = useUserStore.getState();
     const { setUserId } = useRegisterStore.getState();
-    showLoading("");
+    showLoading("Secure login");
 
-    const res = await authApi.pinLogin(data);
+    const res: any = await authApi.pinLogin(data);
 
     if (!res.user) return null;
 
@@ -97,47 +79,18 @@ export async function verifyTxPin(data: {
   const { showLoading, hideLoading } = useUIStore.getState();
 
   try {
-    showLoading("");
+    showLoading("Verifying PIN");
 
     const res = await authApi.verifyTxPin(data);
     if (!res.status) return false;
     return true;
-  } catch (error) {
+  } catch (error: any) {
     // console.error(":", error.message);
     toast.show({
       message: error.message,
       type: "error",
     });
     return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-// fetch user
-export async function fetchUser(userId: string): Promise<User | null> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    const { setUser } = useUserStore.getState();
-    const { setUserId } = useRegisterStore.getState();
-    showLoading("");
-
-    const res = await authApi.fetchUser({ userId });
-
-    if (!res["user"]) return null;
-    getWalletDetails({userId});
-    listBeneficiaries({ userId });
-    getUserVerifications({userId});
-    
-    const user: User = mapUser(res.user);
-    setUser(user);
-    setUserId(user.id);
-
-    return user;
-  } catch (error) {
-    console.error(":", error.message);
-    return null;
   } finally {
     hideLoading();
   }
@@ -158,15 +111,15 @@ export async function registerUser(data: {
   try {
     showLoading("Saving user details");
 
-    const res = await authApi.registerUser(data);
+    const res: any = await authApi.registerUser(data);
 
-    if (!res["status"]) return false;
+    if (!res.status) return false;
 
-    setUserId(res["user_id"] ?? "");
-    await SecureStore.setItemAsync("userId", res["user_id"]);
+    setUserId(res.user_id ?? "");
+    await SecureStore.setItemAsync("userId", res.user_id);
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -178,16 +131,16 @@ export async function registerUser(data: {
   }
 }
 
-// send sign up code
-export async function sendSignupCode(email: string): Promise<boolean> {
+// send email code
+export async function sendEmailCode(email: string): Promise<boolean> {
   const { showLoading, hideLoading } = useUIStore.getState();
 
   try {
-    showLoading("Verifying details");
+    showLoading("Sending code");
 
-    const res = await authApi.sendSignUpCode({ email });
+    const res = await authApi.sendEmailCode({ email });
 
-    if (!res["status"]) return false;
+    if (!res.status) return false;
 
     return true;
   } catch (error) {
@@ -199,7 +152,7 @@ export async function sendSignupCode(email: string): Promise<boolean> {
 }
 
 // verify sign up code
-export async function verifySignupCode(data: {
+export async function verifyEmailCode(data: {
   email: string;
   code: string;
 }): Promise<boolean> {
@@ -208,13 +161,12 @@ export async function verifySignupCode(data: {
   try {
     showLoading("Verifying code");
 
-    const res = await authApi.verifySignUpCode(data);
+    const res = await authApi.verifyEmailCode(data);
 
-    if (!res["status"]) return false;
+    if (!res.status) return false;
 
     return true;
   } catch (error) {
-    // console.error("Signup verification failed:", error);
     return false;
   } finally {
     hideLoading();
@@ -227,20 +179,19 @@ export async function resetPassword(email: string): Promise<boolean> {
   try {
     showLoading("Sending code");
 
-    const res = await authApi.resetPassword({ email });
+    const res: any = await authApi.resetPassword({ email });
 
     if (!res.status) return false;
 
-    const {setUserId} = useRegisterStore.getState();
+    const { setUserId } = useRegisterStore.getState();
     setUserId(res.userId ?? "");
 
     return true;
-  } catch (error) {
-    // console.error(":", error);
+  } catch (error: any) {
     toast.show({
-      type: 'error',
+      type: "error",
       message: error.message,
-    })
+    });
     return false;
   } finally {
     hideLoading();
@@ -259,7 +210,7 @@ export async function createLoginPin(data: {
 
     const res = await authApi.createLoginPin(data);
 
-    if (!res["status"]) return false;
+    if (!res.status) return false;
 
     return true;
   } catch (error) {
@@ -283,10 +234,11 @@ export async function updatePin(data: {
 
     const res = await authApi.updatePin(data);
 
-    if (!res["status"]) return false;
+    if (!res.status) return false;
+    fetchUser(data.userId);
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -313,7 +265,7 @@ export async function changePassword(data: {
     if (!res["status"]) return false;
 
     return true;
-  } catch (error) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -324,155 +276,23 @@ export async function changePassword(data: {
   }
 }
 
-export async function resendSignupCode(): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
+export async function logout(): Promise<boolean> {
   try {
-    showLoading("Resending OTP");
+    const { logout, user, deviceToken } = useUserStore.getState();
+    const { clearWallet } = useWalletStore.getState();
 
-    // emulate API call
-    await delay(3000);
+    logout();
+    clearWallet();
 
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
+    await authApi.logoutDevice({
+      userId: user?.id ?? "",
+      token: deviceToken ?? "",
+    });
 
-    console.log("OTP resent");
-
+    await SecureStore.deleteItemAsync("userId");
+    await SecureStore.deleteItemAsync("showBalance");
     return true;
   } catch (error) {
-    console.error("Resending OTP failed:", error);
     return false;
-  } finally {
-    hideLoading();
   }
 }
-
-export async function saveUserDetails(
-  payload: RegisterDetailsPayload,
-): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    showLoading("Registering user");
-
-    // emulate API call
-    await delay(3000);
-
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
-
-    console.log("Register payload:", payload);
-
-    return true;
-  } catch (error) {
-    console.error("Register failed:", error);
-    return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function createPin(pin: string): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    showLoading("Validating Pin");
-
-    // emulate API call
-    await delay(3000);
-
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
-
-    if (pin !== "555555") return false;
-
-    console.log("Pin valid", pin);
-
-    return true;
-  } catch (error) {
-    console.error("Signup verification failed:", error);
-    return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function verifyEmail(email: string): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    showLoading("Verifying Email");
-
-    // emulate API call
-    await delay(1000);
-
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
-
-    // return false;
-
-    console.log("Email Sent");
-
-    return true;
-  } catch (error) {
-    console.error("Email verification failed:", error);
-    return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function verifyEmailCode(otp: string): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    showLoading("Verifying OTP");
-
-    // emulate API call
-    await delay(3000);
-
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
-
-    if (otp !== "555555") return false;
-
-    console.log("OTP verified", otp);
-
-    return true;
-  } catch (error) {
-    console.error("Signup verification failed:", error);
-    return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function resendEmailCode(): Promise<boolean> {
-  const { showLoading, hideLoading } = useUIStore.getState();
-
-  try {
-    showLoading("Resending OTP");
-
-    // emulate API call
-    await delay(3000);
-
-    // Example: later replace with real call
-    // await authApi.verifyPhoneOTP(payload);
-
-    console.log("OTP resent");
-
-    return true;
-  } catch (error) {
-    console.error("Resending OTP failed:", error);
-    return false;
-  } finally {
-    hideLoading();
-  }
-}
-
-export async function logout() {
-  
-}
-
-const delay = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));

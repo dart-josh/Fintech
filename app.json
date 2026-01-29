@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Arigo Pay",
-    "slug": "arigo-pay",
+    "slug": "arigopay",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -23,7 +23,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "permissions": ["ACCESS_FINE_LOCATION"],
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "android.permission.CAMERA"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.sample.arigopay",
@@ -56,7 +59,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "df26cd8d-7cbb-4dec-8f5a-3e49ef0e51d2"
+        "projectId": "898e2095-8bc6-4185-9781-35e398c964bc"
       }
     }
   }

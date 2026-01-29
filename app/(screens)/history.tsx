@@ -28,7 +28,7 @@ export default function TransactionsPage() {
           : wallet?.transactions;
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
-    const isCredit = item.type === "credit";
+    const isCredit = item.type === "Payment Received";
     return (
       <TouchableOpacity
         style={{

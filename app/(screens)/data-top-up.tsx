@@ -29,7 +29,8 @@ import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { useWalletStore } from "@/store/wallet.store";
 import { useToastStore } from "@/store/toast.store";
-import { fetchUser, verifyTxPin } from "@/services/auth.service";
+import { verifyTxPin } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 import { purchaseData } from "@/services/wallet.service";
 import PinModal from "@/components/PinModal";
 
@@ -39,10 +40,14 @@ export default function DataTopUp() {
   const insets = useSafeAreaInsets();
   const isDark = theme === "dark";
 
+  const { user } = useUserStore.getState();
+  
+    const myPhone = user?.phone ? `0${user?.phone}` : "";
+
   const [network, setNetwork] = useState(NETWORKS[0]);
   const [networkModal, setNetworkModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Bundle | null>(null);
-  const [number, setNumber] = useState("");
+  const [number, setNumber] = useState(myPhone);
 
   const [payModal, setPayModal] = useState(false);
 
@@ -50,12 +55,12 @@ export default function DataTopUp() {
   const [pinError, setPinError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const { user } = useUserStore.getState();
-
   const { wallet } = useWalletStore();
   const userBalance = wallet?.balance ?? "";
 
   const toast = useToastStore.getState();
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -72,10 +77,12 @@ export default function DataTopUp() {
   };
 
   const handlePinComplete = async (pin: string) => {
+    setIsLoading(true);
     setPinError("");
     const pinValid = await verifyPin(pin);
 
     if (!pinValid) {
+      setIsLoading(false);
       setPinError("Invalid PIN");
       Vibration.vibrate(200);
       return;
@@ -93,6 +100,7 @@ export default function DataTopUp() {
         plan: selectedPlan?.title ?? "",
       });
 
+      setIsLoading(false);
       setPinVisible(false);
       setPinError("");
 
@@ -123,6 +131,7 @@ export default function DataTopUp() {
       Vibration.vibrate(200);
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -263,6 +272,7 @@ export default function DataTopUp() {
         onClose={() => setPinVisible(false)}
         onComplete={handlePinComplete}
         error={pinError}
+        isLoading={isLoading}
       />
     </View>
   );

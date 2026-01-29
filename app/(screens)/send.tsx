@@ -1,12 +1,11 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
-  SafeAreaView,
-  Vibration,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -18,9 +17,13 @@ import PinModal from "@/components/PinModal";
 import { useUserStore } from "@/store/user.store";
 import { BeneficiaryModal } from "@/components/BeneficiaryModal";
 import { transferMoney } from "@/services/wallet.service";
-import { fetchUser, verifyTxPin } from "@/services/auth.service";
+import { verifyTxPin } from "@/services/auth.service";
+import { fetchUser } from "@/services/user.service";
 import { useToastStore } from "@/store/toast.store";
 import { formatCurrentDate } from "@/hooks/format.hook";
+import { useWalletStore } from "@/store/wallet.store";
+import { NewBeneficiaryModal } from "@/components/NewBeneficiary";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 interface Beneficiary {
   id: string;
@@ -33,6 +36,7 @@ export default function SendPage() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { colors } = useTheme();
+
   const [amount, setAmount] = useState<number | null>(null);
   const [selectedBeneficiary, setSelectedBeneficiary] =
     useState<Beneficiary | null>(null);
@@ -41,19 +45,35 @@ export default function SendPage() {
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [pinVisible, setPinVisible] = useState(false);
   const [pinError, setPinError] = useState("");
-  const [loading, setLoading] = useState(false);
-
   const [modalVisible, setModalVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   const canTransfer = selectedBeneficiary !== null && (amount ?? 0) >= 100;
+
+  const { user } = useUserStore.getState();
+  const { wallet } = useWalletStore.getState();
+  const toast = useToastStore.getState();
+
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardOpen(true)
+    );
+    const hide = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardOpen(false)
+    );
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const handleSelectBeneficiary = (beneficiary: Beneficiary) => {
     setSelectedBeneficiary(beneficiary);
     setModalVisible(false);
   };
-
-  const { user } = useUserStore.getState();
-  const toast = useToastStore.getState();
 
   const handleConfirmTransfer = () => {
     setConfirmVisible(false);
@@ -64,67 +84,50 @@ export default function SendPage() {
     }
   };
 
-  const verifyPin = async (pin: string): Promise<boolean> => {
-    const valid = await verifyTxPin({ userId: user?.id ?? "", pin });
-    return valid;
-  };
-
   const handlePinComplete = async (pin: string) => {
+    setIsLoading(true);
     setPinError("");
-    const pinValid = await verifyPin(pin);
 
-    if (!pinValid) {
+    const valid = await verifyTxPin({ userId: user?.id ?? "", pin });
+    if (!valid) {
       setPinError("Invalid PIN");
-      Vibration.vibrate(200);
+      setIsLoading(false);
       return;
     }
-
-    if (loading) return;
-    setLoading(true);
 
     try {
       const res = await transferMoney({
         sender_id: user?.id ?? "",
         amount: Number(amount),
         payment_code: selectedBeneficiary?.paymentCode ?? "",
-        // pin,
       });
 
       setPinVisible(false);
-      setPinError("");
-
-      if (!res) {
-        router.push({
-          pathname: "/payment-status",
-          params: {
-            recipientName: selectedBeneficiary?.name,
-            paymentCode: selectedBeneficiary?.paymentCode,
-            amount,
-            date: formatCurrentDate(),
-            reference: "",
-            method: "Peer-Peer Transfer",
-            status: "failed",
-          },
-        });
-        return;
-      }
       fetchUser(user?.id ?? "");
+
       router.back();
       router.push({
         pathname: "/payment-status",
-        params: { ...res },
+        params:
+          res ??
+          {
+            recipientName: selectedBeneficiary?.name,
+            paymentCode: selectedBeneficiary?.paymentCode,
+            amount,
+            date: formatCurrentDate(""),
+            reference: "",
+            method: "Wallet-to-Wallet Transfer",
+            status: "failed",
+          },
       });
-    } catch (e) {
-      setPinError("Invalid PIN");
-      Vibration.vibrate(200);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      {/* Top Bar */}
+      {/* ================= HEADER ================= */}
       <View
         style={[
           styles.header,
@@ -140,103 +143,151 @@ export default function SendPage() {
         </Text>
       </View>
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* --- Amount Card --- */}
-        <View style={[styles.amountCard, { backgroundColor: colors.card }]}>
-          <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
-            Amount
-          </Text>
-          <TouchableOpacity
-            onPress={() => setShowAmountSheet(true)}
-            style={[styles.amountDisplay, { backgroundColor: colors.surface }]}
-          >
-            <Text style={[styles.amountText, { color: colors.textPrimary }]}>
-              ₦{amount ? amount.toLocaleString() : "0"}
+      {/* ================= CONTENT ================= */}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <KeyboardAwareScrollView
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid
+          enableAutomaticScroll
+          extraScrollHeight={10}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: keyboardOpen
+              ? 40
+              : insets.bottom + 140,
+          }}
+        >
+          {/* Amount */}
+          <View style={[styles.amountCard, { backgroundColor: colors.card }]}>
+            <Text style={{ color: colors.textSecondary, marginBottom: 8 }}>
+              Amount
             </Text>
-            <Feather name="edit-3" size={18} color={colors.accent} />
-          </TouchableOpacity>
-        </View>
 
-        {/* --- Beneficiary Selection Box --- */}
-        <TouchableOpacity
-          onPress={() => setModalVisible(true)}
+            <TouchableOpacity
+              onPress={() => setShowAmountSheet(true)}
+              style={[
+                styles.amountDisplay,
+                { backgroundColor: colors.surface },
+              ]}
+            >
+              <Text style={[styles.amountText, { color: colors.textPrimary }]}>
+                ₦{amount ? amount.toLocaleString() : "0"}
+              </Text>
+              <Feather name="edit-3" size={18} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Beneficiary */}
+          <TouchableOpacity
+            onPress={() => setModalVisible(true)}
+            style={[
+              styles.beneficiaryCard,
+              {
+                backgroundColor: colors.card,
+                borderWidth: selectedBeneficiary ? 0 : 1,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            {selectedBeneficiary ? (
+              <View style={styles.row}>
+                <View
+                  style={[
+                    styles.avatar,
+                    { backgroundColor: colors.accent + "22" },
+                  ]}
+                >
+                  <Feather name="user" size={22} color={colors.accent} />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      color: colors.textPrimary,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {selectedBeneficiary.nickname}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
+                    {selectedBeneficiary.paymentCode}
+                  </Text>
+                </View>
+
+                <Text style={{ color: colors.accent, fontWeight: "700" }}>
+                  Change
+                </Text>
+              </View>
+            ) : (
+              <Text style={{ color: colors.textSecondary }}>
+                Select beneficiary
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          <View style={{ marginTop: 40 }}>
+            <NewBeneficiaryModal
+              onSelectRecipient={(data) => {
+                if (data.paymentCode === user?.payment_code) {
+                  toast.show({
+                    message: "You cannot send money to yourself",
+                    type: "error",
+                  });
+                } else {
+                  setSelectedBeneficiary({
+                    name: data.name,
+                    paymentCode: data.paymentCode,
+                    nickname: data.name,
+                    id: "",
+                  });
+                }
+              }}
+            />
+          </View>
+        </KeyboardAwareScrollView>
+      </TouchableWithoutFeedback>
+
+      {/* ================= BOTTOM ACTIONS ================= */}
+      {!keyboardOpen && (
+        <View
           style={[
-            styles.beneficiaryCard,
+            styles.bottomActions,
             {
               backgroundColor: colors.card,
-              borderWidth: selectedBeneficiary ? 0 : 1,
-              borderColor: colors.border,
+              borderTopColor: colors.border,
+              paddingBottom: insets.bottom + 12,
             },
           ]}
         >
-          {selectedBeneficiary ? (
-            <View style={styles.row}>
-              <View
-                style={[
-                  styles.avatar,
-                  { backgroundColor: colors.accent + "22" },
-                ]}
-              >
-                <Feather name="user" size={22} color={colors.accent} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
-                  {selectedBeneficiary.nickname}
-                </Text>
-                <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                  {selectedBeneficiary.paymentCode}
-                </Text>
-              </View>
-              <Text style={{ color: colors.accent, fontWeight: "700" }}>
-                Change
-              </Text>
-            </View>
-          ) : (
-            <Text style={{ color: colors.textSecondary }}>
-              Select beneficiary
+          <TouchableOpacity
+            style={[styles.cancelBtn, { backgroundColor: colors.surface }]}
+            onPress={() => router.back()}
+          >
+            <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
+              Cancel
             </Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+          </TouchableOpacity>
 
-      {/* --- Bottom Actions --- */}
-      <View
-        style={[
-          styles.bottomActions,
-          {
-            backgroundColor: colors.card,
-            borderTopColor: colors.border,
-            paddingBottom: insets.bottom + 12,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          disabled={loading}
-          style={[styles.cancelBtn, { backgroundColor: colors.surface }]}
-          onPress={() => router.back()}
-        >
-          <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
-            Cancel
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            disabled={!canTransfer}
+            style={[
+              styles.sendBtn,
+              {
+                backgroundColor: canTransfer
+                  ? colors.accent
+                  : colors.muted,
+              },
+            ]}
+            onPress={() => setConfirmVisible(true)}
+          >
+            <Text style={{ color: "#FFF", fontWeight: "800" }}>
+              Send
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
-        <TouchableOpacity
-          disabled={!canTransfer}
-          style={[
-            styles.sendBtn,
-            { backgroundColor: canTransfer ? colors.accent : colors.muted },
-          ]}
-          onPress={() => setConfirmVisible(true)}
-        >
-          <Text style={{ color: "#FFF", fontWeight: "800" }}>Send</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Amount Selector Sheet */}
+      {/* ================= MODALS ================= */}
       {showAmountSheet && (
         <AmountSelectorSheet
           onClose={() => setShowAmountSheet(false)}
@@ -247,14 +298,12 @@ export default function SendPage() {
         />
       )}
 
-      {/* Beneficiary Modal */}
       <BeneficiaryModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onSelect={handleSelectBeneficiary}
       />
 
-      {/* Confirm & PIN Modals */}
       {confirmVisible && (
         <TransferConfirmModal
           visible={confirmVisible}
@@ -262,7 +311,7 @@ export default function SendPage() {
           amount={amount || 0}
           recipientName={selectedBeneficiary?.name ?? ""}
           paymentCode={selectedBeneficiary?.paymentCode ?? ""}
-          userBalance={45000}
+          userBalance={wallet?.balance ?? ""}
           onConfirm={handleConfirmTransfer}
         />
       )}
@@ -273,6 +322,7 @@ export default function SendPage() {
           onClose={() => setPinVisible(false)}
           onComplete={handlePinComplete}
           error={pinError}
+          isLoading={isLoading}
         />
       )}
     </View>
@@ -285,7 +335,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 0.5,
   },
-  headerTitle: { fontSize: 24, fontWeight: "800", marginBottom: 4 },
+  headerTitle: { fontSize: 24, fontWeight: "800" },
+
   amountCard: {
     margin: 16,
     borderRadius: 18,
@@ -306,7 +357,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     padding: 20,
     marginTop: 16,
-    justifyContent: "center",
   },
   row: { flexDirection: "row", alignItems: "center" },
   avatar: {

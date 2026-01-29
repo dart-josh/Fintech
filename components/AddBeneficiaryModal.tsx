@@ -31,14 +31,9 @@ interface Beneficiary {
 interface Props {
   visible: boolean;
   onClose: () => void;
-//   onAdd: (b: Beneficiary) => void;
 }
 
-export const AddBeneficiaryModal: React.FC<Props> = ({
-  visible,
-  onClose,
-//   onAdd,
-}) => {
+export const AddBeneficiaryModal: React.FC<Props> = ({ visible, onClose }) => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -47,27 +42,28 @@ export const AddBeneficiaryModal: React.FC<Props> = ({
   const [verifiedName, setVerifiedName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [addError, setAddError] = useState("");
 
   const cardBg = isDark ? "#1E1E1E" : "#fff";
   const textColor = isDark ? "#fff" : "#111";
 
-  const fetchUser = async () => {
-    if (!paymentCode.trim()) return;
+  const fetchUserByCode = async (code?: string) => {
+    const fullCode = code ?? `AGP-${paymentCode}`;
+    if (!fullCode.trim()) return;
+
     setLoading(true);
     setError("");
     setVerifiedName(null);
 
     const name: string | null = await getUserByPaymentCode({
-      payment_code: paymentCode,
+      payment_code: fullCode,
     });
 
     if (name) setVerifiedName(name);
     else setError("Payment code not found");
-    setAddError('');
-    setNickname('');
 
+    setAddError("");
+    setNickname("");
     setLoading(false);
   };
 
@@ -76,20 +72,18 @@ export const AddBeneficiaryModal: React.FC<Props> = ({
     if (!verifiedName || !nickname.trim()) return;
 
     const newB: Beneficiary | null | string = await addBeneficiary({
-      payment_code: paymentCode,
+      payment_code: `AGP-${paymentCode}`,
       nickname,
       user_id: user?.id ?? "",
     });
 
     if (!newB) return;
-    if (typeof(newB) === 'string') {
-        setAddError(newB);
-        return;
+    if (typeof newB === "string") {
+      setAddError(newB);
+      return;
     }
 
-    setAddError('');
-
-    // onAdd(newB);
+    setAddError("");
     setBeneficiaries([...beneficiaries, newB]);
 
     // reset
@@ -99,190 +93,146 @@ export const AddBeneficiaryModal: React.FC<Props> = ({
     onClose();
   };
 
+  const handlePaste = async () => {
+    const text = await Clipboard.getStringAsync();
+    let clean = text.startsWith("AGP-") ? text.slice(4) : text;
+    setPaymentCode(clean);
+    fetchUserByCode(text); // auto-fetch
+  };
+
   return (
-    <Modal isVisible={visible} onBackdropPress={onClose} style={styles.modal} backdropOpacity={0.5}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        // style={styles.flex}
+    <>
+      <Modal
+        isVisible={visible}
+        onBackdropPress={onClose}
+        style={styles.modal}
+        backdropOpacity={0.5}
       >
-        <TouchableWithoutFeedback
-          onPress={Keyboard.dismiss}
-          style={styles.flex}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <View style={[styles.container, { backgroundColor: cardBg }]}>
-            <Text style={[styles.title, { color: textColor }]}>
-              Add Beneficiary
-            </Text>
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} style={{ flex: 1 }}>
+            <View style={[styles.container, { backgroundColor: cardBg }]}>
+              <Text style={[styles.title, { color: textColor }]}>Add Beneficiary</Text>
 
-            {/* Payment Code Input */}
-            <Text style={[styles.label, { color: "#888" }]}>Payment Code</Text>
-            <View style={styles.row}>
-              <TextInput
-                value={paymentCode}
-                onChangeText={setPaymentCode}
-                placeholder="Payment code"
-                placeholderTextColor="#999"
-                returnKeyType="done"
-                onSubmitEditing={fetchUser}
-                style={[
-                  styles.input,
-                  {
-                    color: textColor,
-                    backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5",
-                  },
-                ]}
-              />
-
-              {/* Paste Button */}
-              <TouchableOpacity
-                onPress={async () => {
-                  const text = await Clipboard.getStringAsync(); // get text from clipboard
-                  setPaymentCode(text);
-                  fetchUser(); // optionally auto-verify after pasting
-                }}
-                style={[
-                  styles.pasteButton,
-                  { backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5" },
-                ]}
-              >
-                <Feather name="clipboard" size={20} color="#007AFF" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={fetchUser} style={styles.fetchButton}>
-                <Text style={styles.fetchButtonText}>Fetch</Text>
-              </TouchableOpacity>
-            </View>
-
-            {loading && (
-              <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color="#007AFF" />
-                <Text style={{ marginLeft: 8, color: "#888" }}>
-                  Verifying...
-                </Text>
-              </View>
-            )}
-
-            {verifiedName && (
-              <View style={{ marginTop: 12 }}>
-                <Text style={[styles.label, { color: "#888" }]}>Name</Text>
-                <Text style={[styles.verifiedName, { color: textColor }]}>
-                  {verifiedName}
-                </Text>
-
-                <Text style={[styles.label, { color: "#888", marginTop: 12 }]}>
-                  Nickname
-                </Text>
+              {/* Payment Code Input Row */}
+              <Text style={[styles.label, { color: "#888" }]}>Payment Code</Text>
+              <View style={styles.inputRow}>
+                <View
+                  style={[
+                    styles.prefix,
+                    { backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5" },
+                  ]}
+                >
+                  <Text style={{ color: "#007AFF", fontWeight: "700" }}>AGP-</Text>
+                </View>
                 <TextInput
-                  value={nickname}
-                  onChangeText={setNickname}
-                  placeholder="Enter nickname"
+                  value={paymentCode}
+                  onChangeText={setPaymentCode}
+                  placeholder="Enter payment code"
                   placeholderTextColor="#999"
                   style={[
-                    styles.input2,
-                    {
-                      color: textColor,
-                      backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5",
-                    },
+                    styles.input,
+                    { color: textColor, backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5" },
                   ]}
                   returnKeyType="done"
-                  onSubmitEditing={Keyboard.dismiss}
                 />
-
-                <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
-                  <Text style={styles.addButtonText}>Add Beneficiary</Text>
+                <TouchableOpacity onPress={handlePaste} style={styles.iconButton}>
+                  <Feather name="clipboard" size={20} color="#007AFF" />
                 </TouchableOpacity>
               </View>
-            )}
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
-            {addError ? <Text style={styles.error}>{addError}</Text> : null}
-            <View style={{ paddingBottom: 20 }} />
-          </View>
-        </TouchableWithoutFeedback>
-      </KeyboardAvoidingView>
-    </Modal>
+              {/* Fetch button below input */}
+              <TouchableOpacity onPress={() => fetchUserByCode()} style={styles.fetchButton}>
+                <Text style={styles.fetchButtonText}>Fetch</Text>
+              </TouchableOpacity>
+
+              {loading && (
+                <View style={styles.loadingRow}>
+                  <ActivityIndicator size="small" color="#007AFF" />
+                  <Text style={{ marginLeft: 8, color: "#888" }}>Verifying...</Text>
+                </View>
+              )}
+
+              {verifiedName && (
+                <View style={{ marginTop: 16 }}>
+                  <Text style={[styles.label, { color: "#888" }]}>Name</Text>
+                  <Text style={[styles.verifiedName, { color: textColor }]}>
+                    {verifiedName}
+                  </Text>
+
+                  <Text style={[styles.label, { color: "#888", marginTop: 12 }]}>
+                    Nickname
+                  </Text>
+                  <TextInput
+                    value={nickname}
+                    onChangeText={setNickname}
+                    placeholder="Enter nickname"
+                    placeholderTextColor="#999"
+                    style={[
+                      styles.input2,
+                      { color: textColor, backgroundColor: isDark ? "#2C2C2C" : "#F5F5F5" },
+                    ]}
+                    returnKeyType="done"
+                    onSubmitEditing={Keyboard.dismiss}
+                  />
+
+                  <TouchableOpacity onPress={handleAdd} style={styles.addButton}>
+                    <Text style={styles.addButtonText}>Add Beneficiary</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {(error || addError) && (
+                <Text style={styles.error}>{error || addError}</Text>
+              )}
+
+              <View style={{ paddingBottom: 20 }} />
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
-  modal: {
-    margin: 0,
-    justifyContent: "center",
-  },
+  modal: { margin: 0, justifyContent: "center" },
   container: {
     marginHorizontal: 20,
     borderRadius: 16,
     padding: 24,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 16,
-    textAlign: "center",
+  title: { fontSize: 20, fontWeight: "700", marginBottom: 16, textAlign: "center" },
+  label: { fontSize: 14, marginBottom: 6 },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  label: {
-    fontSize: 14,
-    marginBottom: 6,
+  prefix: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderTopLeftRadius: 12,
+    borderBottomLeftRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
   },
   input: {
     flex: 1,
-    borderRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
   },
   input2: {
-    // flex: 1,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  fetchButton: {
-    marginLeft: 8,
-    backgroundColor: "#007AFF",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  fetchButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  loadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  verifiedName: {
-    fontSize: 16,
-    fontWeight: "600",
-    paddingVertical: 6,
-  },
-  addButton: {
-    marginTop: 16,
-    backgroundColor: "#007AFF",
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  addButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-  error: {
-    color: "red",
-    marginTop: 12,
-    textAlign: "center",
-  },
-  pasteButton: {
+  iconButton: {
     marginLeft: 8,
     padding: 10,
     borderRadius: 12,
@@ -291,4 +241,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#007AFF",
   },
+  fetchButton: {
+    marginTop: 10,
+    backgroundColor: "#007AFF",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+  },
+  fetchButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  loadingRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
+  verifiedName: { fontSize: 16, fontWeight: "600", paddingVertical: 6 },
+  addButton: {
+    marginTop: 16,
+    backgroundColor: "#007AFF",
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  addButtonText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+  error: { color: "red", marginTop: 12, textAlign: "center" },
 });

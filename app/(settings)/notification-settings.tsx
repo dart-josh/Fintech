@@ -11,7 +11,12 @@ import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
-import { registerForPushNotifications } from "@/services/notification.service";
+import {
+  deactivateDevice,
+  registerForPushNotifications,
+} from "@/services/notification.service";
+import { useUserStore } from "@/store/user.store";
+import * as SecureStore from "expo-secure-store";
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
@@ -19,9 +24,43 @@ export default function NotificationSettingsScreen() {
   const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
+  const { deviceToken, devices } = useUserStore();
+
   const [emailNotif, setEmailNotif] = useState(true);
-  const [appNotif, setAppNotif] = useState(true);
+  const [appNotif, setAppNotif] = useState(!!deviceToken);
   const [smsNotif, setSmsNotif] = useState(false);
+
+  const getToken = async () => {
+    setAppNotif(true);
+    const token = await registerForPushNotifications();
+    if (!token) {
+      setAppNotif(false);
+      return;
+    }
+
+    await SecureStore.setItemAsync("showAppNotif", "true");
+  };
+
+  const disableToken = async () => {
+    setAppNotif(false);
+    const valid = await deactivateDevice();
+    if (!valid) {
+      setAppNotif(true);
+      return;
+    }
+
+    await SecureStore.setItemAsync("showAppNotif", "false");
+  };
+
+  useEffect(() => {
+    const checkNotificationStatus = () => {
+      const myDevice = devices.find((d) => d.device_token === deviceToken);
+      if (!myDevice || !myDevice.is_active) setAppNotif(false);
+      else setAppNotif(true);
+    };
+
+    checkNotificationStatus();
+  }, [deviceToken, devices]);
 
   const notificationItems = [
     {
@@ -35,7 +74,13 @@ export default function NotificationSettingsScreen() {
       label: "App Notification",
       subtitle: "Receive transaction notification alerts in app.",
       switchValue: appNotif,
-      onToggle: setAppNotif,
+      onToggle: (val: boolean) => {
+        if (val) {
+          getToken();
+        } else {
+          disableToken();
+        }
+      },
       icon: "bell",
     },
     {
@@ -46,16 +91,6 @@ export default function NotificationSettingsScreen() {
       icon: "message-circle",
     },
   ];
-
-  useEffect(() => {
-    const getToken = async () => {
-      const token = await registerForPushNotifications();
-      console.log(token);
-    };
-    if (appNotif) {
-      getToken();
-    }
-  }, [appNotif]);
 
   return (
     <View

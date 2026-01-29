@@ -14,7 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/theme/ThemeContext";
 import { AirtimeReceipt, DataReceipt } from "@/services/wallet.service";
-import { formatNGPhone, formatNumberSpace } from "@/hooks/format.hook";
+import { formatNumberSpace } from "@/hooks/format.hook";
 
 export default function TopUpStatusPage() {
   const insets = useSafeAreaInsets();
@@ -25,12 +25,27 @@ export default function TopUpStatusPage() {
 
   const receipt = {
     phone: params.phone ?? "",
-    amount: params.amount ?? "0.00",
+    amount: params.amount.replace(/,/g, "") ?? "0.00",
     reference: params.reference ?? "",
     date: params.date ?? new Date().toISOString(),
     status: params.status ?? "pending",
     method: params.method ?? "Top-Up",
     plan: params.plan ?? "",
+  };
+
+  const handleShareReceipt = async () => {
+    router.push({
+      pathname: "/receipt",
+      params: {
+        id: `tf-${receipt.date}`,
+        type: receipt.plan ? 'Mobile Data Purchase' : 'Airtime Purchase',
+        amount: receipt.amount,
+        status: receipt.status,
+        reference: receipt.reference,
+        description: receipt.plan ? `Mobile Data Purchase for ${receipt.phone}` : `Airtime Purchase for ${receipt.phone}`,
+        date: receipt.date,
+      },
+    });
   };
 
   const statusConfig = {
@@ -173,7 +188,7 @@ export default function TopUpStatusPage() {
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.secondaryBtn, { backgroundColor: colors.surface }]}
-              onPress={() => console.log("Share receipt")}
+              onPress={handleShareReceipt}
             >
               <Text style={[styles.secondaryText, { color: colors.accent }]}>
                 Share Receipt

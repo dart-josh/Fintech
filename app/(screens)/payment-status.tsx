@@ -48,7 +48,22 @@ export default function PaymentStatusPage() {
     status,
   };
 
-  const statusConfig = {
+  const handleShareReceipt = async () => {
+    router.push({
+      pathname: "/receipt",
+      params: {
+        id: `tf-${date}`,
+        type: 'Transfer',
+        amount,
+        status,
+        reference,
+        description: `Transfer to ${recipientName}`,
+        date,
+      },
+    });
+  };
+
+  const statusConfig : any = {
     success: {
       icon: "check-circle",
       title: "Payment Successful",
@@ -174,7 +189,7 @@ export default function PaymentStatusPage() {
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.secondaryBtn, { backgroundColor: colors.surface }]}
-              onPress={() => console.log("Share receipt")}
+              onPress={handleShareReceipt}
             >
               <Text style={[styles.secondaryText, { color: colors.accent }]}>
                 Share Receipt

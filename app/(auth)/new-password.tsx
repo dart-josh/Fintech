@@ -13,7 +13,6 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext"; // your theme context
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useUserStore } from "@/store/user.store";
 import { changePassword } from "@/services/auth.service";
 import { useRegisterStore } from "@/store/register.store";
 
@@ -51,7 +50,8 @@ const ChangePassword = () => {
       }
   
       router.back();
-      router.replace("/password-success");
+      router.back();
+      router.push("/password-success");
     };
 
   const colors = {

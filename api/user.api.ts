@@ -1,6 +1,9 @@
 import client from "./client";
 
 export const userApi = {
+  fetchUser: (data: { userId: string }) =>
+    client.post("/api/user/me", data),
+  
   verifyUserEmail: (data: { userId: string }) =>
     client.post("/api/user/verifyEmail", data),
 

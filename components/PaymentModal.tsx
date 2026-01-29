@@ -1,5 +1,11 @@
 import React from "react";
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { formatNumberSpace } from "@/hooks/format.hook";
@@ -32,6 +38,9 @@ export default function PaymentModal({
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
 
+  const numericBalance = Number(userBalance.replace(/,/g, ""));
+  const isInsufficient = numericBalance < amount;
+
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
@@ -52,9 +61,13 @@ export default function PaymentModal({
               label="Product"
               value={type === "airtime" ? "Airtime" : "Data"}
               icon={
-                <View style={styles.networkLogo}>
-                  <Text style={{fontSize: 12}}>{networkName[0]}</Text>
-                </View>
+                networkLogo ?? (
+                  <View style={styles.networkLogo}>
+                    <Text style={{ fontSize: 12 }}>
+                      {networkName[0]}
+                    </Text>
+                  </View>
+                )
               }
               colors={colors}
             />
@@ -63,11 +76,15 @@ export default function PaymentModal({
               label="Recipient Mobile"
               value={recipient}
               colors={colors}
-              isNumber={true}
+              isNumber
             />
 
             {type === "data" && dataBundle && (
-              <InfoRow label="Data Bundle" value={dataBundle} colors={colors} />
+              <InfoRow
+                label="Data Bundle"
+                value={dataBundle}
+                colors={colors}
+              />
             )}
 
             <InfoRow
@@ -92,6 +109,8 @@ export default function PaymentModal({
               styles.paymentBox,
               {
                 backgroundColor: isDark ? "#2A2A2A" : "#F4F5F7",
+                borderColor: isInsufficient ? "#EF4444" : "transparent",
+                borderWidth: isInsufficient ? 1 : 0,
               },
             ]}
           >
@@ -101,27 +120,43 @@ export default function PaymentModal({
                   <Text style={{ color: colors.text, fontWeight: "600" }}>
                     Available Balance
                   </Text>
-
-                  <TouchableOpacity>
-                    <Feather name="info" size={14} color={colors.muted} />
-                  </TouchableOpacity>
+                  <Feather name="info" size={14} color={colors.muted} />
                 </View>
 
                 <Text style={{ color: colors.muted, marginTop: 4 }}>
-                  ₦{userBalance.toLocaleString()}
+                  ₦{numericBalance.toLocaleString()}
                 </Text>
+
+                {isInsufficient && (
+                  <Text style={styles.insufficientText}>
+                    Insufficient balance
+                  </Text>
+                )}
               </View>
 
-              <Feather name="check-circle" size={22} color={colors.primary} />
+              <Feather
+                name={isInsufficient ? "alert-circle" : "check-circle"}
+                size={22}
+                color={isInsufficient ? "#EF4444" : colors.primary}
+              />
             </View>
           </View>
 
           {/* Pay button */}
           <TouchableOpacity
-            style={[styles.payBtn, { backgroundColor: colors.primary }]}
+            disabled={isInsufficient}
+            style={[
+              styles.payBtn,
+              {
+                backgroundColor: colors.primary,
+                opacity: isInsufficient ? 0.5 : 1,
+              },
+            ]}
             onPress={onPay}
           >
-            <Text style={styles.payText}>Pay</Text>
+            <Text style={styles.payText}>
+              {isInsufficient ? "Insufficient Balance" : "Pay"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -129,7 +164,7 @@ export default function PaymentModal({
   );
 }
 
-
+/* ---------------- Info Row ---------------- */
 
 const InfoRow = ({
   label,
@@ -144,7 +179,9 @@ const InfoRow = ({
   colors: any;
   isNumber?: boolean;
 }) => {
-  const displayValue = isNumber ? formatNumberSpace(value) : value;
+  const displayValue = isNumber
+    ? formatNumberSpace(value)
+    : value;
 
   return (
     <View style={styles.infoRow}>
@@ -160,6 +197,7 @@ const InfoRow = ({
   );
 };
 
+/* ---------------- Styles ---------------- */
 
 const styles = StyleSheet.create({
   overlay: {
@@ -220,6 +258,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+  },
+  insufficientText: {
+    color: "#EF4444",
+    fontSize: 12,
+    marginTop: 6,
+    fontWeight: "500",
   },
   payBtn: {
     marginTop: 20,

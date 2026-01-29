@@ -91,6 +91,11 @@ export function parseFormattedAmount(amountStr: string): number {
   return isNaN(num) ? 0 : num;
 }
 
+export const capitalizeFirst = (value?: string) => {
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+};
+
 
 
 

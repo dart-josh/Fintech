@@ -16,14 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { registerUser } from "@/services/auth.service";
-import { useToastStore } from "@/store/toast.store";
 import { useRegisterStore } from "@/store/register.store";
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const [fullname, setFullname] = useState("");
+  const [f_name, setFName] = useState("");
+  const [l_name, setLName] = useState("");
   const [username, setUsername] = useState("");
   const [referral, setReferral] = useState("");
   const [password, setPassword] = useState("");
@@ -32,17 +32,17 @@ export default function OnboardingScreen() {
 
   const { email, phone, setEmailVerified, setDetails } = useRegisterStore();
 
-  const canContinue = fullname.length > 3 && username.length > 3 && password.length > 5;
+  const canContinue = f_name.length > 3 && l_name.length > 3 && username.length > 3 && password.length > 5;
 
   useEffect(() => {
     setEmailVerified(true);
   }, [setEmailVerified]);
 
   const handleSubmit = async () => {
-
     if (!canContinue) return;
     try {
       setLoading(true);
+      const fullname = `${f_name.trim()} ${l_name.trim()}`;
       setDetails({ full_name: fullname, username, password });
       const success = await registerUser({
         email,
@@ -122,9 +122,9 @@ export default function OnboardingScreen() {
 
             {/* Form */}
             <View style={styles.form}>
-              {/* Fullname */}
+              {/* First name */}
               <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Fullname
+                First name
               </Text>
               <View
                 style={[styles.inputWrap, { backgroundColor: colors.card }]}
@@ -136,12 +136,35 @@ export default function OnboardingScreen() {
                   style={{ marginRight: 10 }}
                 />
                 <TextInput
-                  value={fullname}
-                  placeholder="Enter fullname"
+                  value={f_name}
+                  placeholder="Enter first name"
                   placeholderTextColor={colors.textSecondary}
                   style={[styles.input, { color: colors.textPrimary }]}
                   autoCapitalize="none"
-                  onChangeText={setFullname}
+                  onChangeText={setFName}
+                />
+              </View>
+
+              {/* Last name */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>
+                Last name
+              </Text>
+              <View
+                style={[styles.inputWrap, { backgroundColor: colors.card }]}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={18}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 10 }}
+                />
+                <TextInput
+                  value={l_name}
+                  placeholder="Enter last name"
+                  placeholderTextColor={colors.textSecondary}
+                  style={[styles.input, { color: colors.textPrimary }]}
+                  autoCapitalize="none"
+                  onChangeText={setLName}
                 />
               </View>
 
