@@ -33,6 +33,9 @@ export const walletApi = {
   getWalletDetails: (data: { userId: string }) =>
     client.post("/api/wallet/get", data),
 
+   getStatement: (data: { userId: string, startDate: string, endDate: string }) =>
+    client.post("/api/wallet/statement", data),
+
   getUserByPaymentCode: (data: { payment_code: string }) =>
     client.post("/api/beneficiary/find", data),
 

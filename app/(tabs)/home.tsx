@@ -137,7 +137,7 @@ const DashboardScreen = () => {
 
         <EventBox
           title="ArigoPay Launch Event"
-          subtitle="Jan 30, 2026 | 10:00 AM"
+          subtitle="Feb 10, 2026 | 10:00 AM"
         />
 
         <RecentTransactions isDark={isDark} />

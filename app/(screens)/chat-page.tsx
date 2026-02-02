@@ -8,6 +8,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -22,38 +23,77 @@ export default function ChatPage() {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
 
-  const [messages, setMessages] = useState([
-    { id: "100", text: "Hello! How can I help you today?", sender: "agent" },
-  ]);
+  const { user } = useUserStore();
+
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
+  const [isFetching, setIsFetching] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+
   const flatListRef = useRef<FlatList>(null);
 
-  const {user} = useUserStore();
+  /** Fetch messages */
+  const fetchMessages = async () => {
+    if (!user?.id) return;
+    setIsFetching(true);
+    try {
+      const ms = await getMessages({ userId: user.id });
+      const formatted = ms.map((m: any) => ({
+        id: m.id.toString(),
+        text: m.message,
+        sender: m.sender_type === "user" ? "user" : "agent",
+      }));
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    storeMessage({userId: user?.id ?? "", message: input, senderType: 'user'});
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now().toString(), text: input, sender: "user" },
-    ]);
-    setInput("");
-
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+      // If user is at bottom, auto-scroll
+      if (isAtBottom) {
+        setMessages(formatted);
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+      } else {
+        // User scrolled up, show indicator for new messages
+        const newMsgs = formatted.length - messages.length;
+        if (newMsgs > 0) setNewMessageCount(newMsgs);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    setIsFetching(false);
   };
 
   useEffect(() => {
-    const getM = async () => {
-      const ms = await getMessages({userId: user?.id ?? ""});
-      const newM = ms.map((m) => {return {id: m.id, text: m.message, sender: m.sender_type}});
-      setMessages([...messages, ...newM]);
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 5000); // auto-refresh every 5s
+    return () => clearInterval(interval);
+  }, [user?.id, isAtBottom]);
+
+  /** Send message */
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const newMessage = {
+      id: Date.now().toString(),
+      text: input,
+      sender: "user",
+    };
+
+    // Optimistic update
+    setMessages((prev) => [...prev, newMessage]);
+    setInput("");
+
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+
+    try {
+      await storeMessage({
+        userId: user.id,
+        message: input,
+        senderType: "user",
+      });
+    } catch (err) {
+      console.error("Failed to store message", err);
     }
+  };
 
-    getM();
-  }, [])
-
+  /** Render each message */
   const renderMessage = ({ item }: { item: any }) => {
     const isUser = item.sender === "user";
     return (
@@ -70,16 +110,22 @@ export default function ChatPage() {
           },
         ]}
       >
-        <Text
-          style={{
-            color: isUser ? "#fff" : colors.textPrimary,
-            fontSize: 14,
-          }}
-        >
+        <Text style={{ color: isUser ? "#fff" : colors.textPrimary, fontSize: 14 }}>
           {item.text}
         </Text>
       </View>
     );
+  };
+
+  /** Track if user is at bottom */
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20;
+    const atBottom =
+      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    setIsAtBottom(atBottom);
+
+    if (atBottom) setNewMessageCount(0);
   };
 
   return (
@@ -103,17 +149,10 @@ export default function ChatPage() {
         </TouchableOpacity>
 
         <View style={styles.supportTitleWrapper}>
-          <View
-            style={[
-              styles.supportIcon,
-              { backgroundColor: colors.primary + "33" },
-            ]}
-          >
+          <View style={[styles.supportIcon, { backgroundColor: colors.primary + "33" }]}>
             <Ionicons name="headset" size={20} color={colors.primary} />
           </View>
-          <Text style={[styles.supportTitle, { color: colors.textPrimary }]}>
-            Support
-          </Text>
+          <Text style={[styles.supportTitle, { color: colors.textPrimary }]}>Support</Text>
         </View>
       </View>
 
@@ -125,12 +164,34 @@ export default function ChatPage() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 12 }}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
       />
 
-      {/* Message Input with KeyboardAvoidingView only */}
+      {/* New Message Indicator */}
+      {newMessageCount > 0 && (
+        <TouchableOpacity
+          style={styles.newMessageIndicator}
+          onPress={() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+            setNewMessageCount(0);
+          }}
+        >
+          <Text style={{ color: "#fff" }}>{newMessageCount} New Message(s)</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* Fetching Spinner */}
+      {isFetching && (
+        <View style={styles.fetchingSpinner}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      )}
+
+      {/* Input */}
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={insets.bottom - 30} // very small offset
+        keyboardVerticalOffset={insets.bottom || 8}
       >
         <View
           style={[
@@ -148,6 +209,7 @@ export default function ChatPage() {
             placeholder="Type your message..."
             placeholderTextColor={colors.textSecondary}
             style={[styles.input, { color: colors.textPrimary }]}
+            multiline
           />
           <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
             <Ionicons name="send" size={24} color="#fff" />
@@ -160,7 +222,6 @@ export default function ChatPage() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -169,35 +230,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     zIndex: 10,
   },
-
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-
-  supportTitleWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  supportIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 8,
-  },
-
-  supportTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-  },
-
+  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginRight: 12 },
+  supportTitleWrapper: { flexDirection: "row", alignItems: "center" },
+  supportIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginRight: 8 },
+  supportTitle: { fontSize: 20, fontWeight: "600" },
   messageContainer: {
     maxWidth: "75%",
     padding: 12,
@@ -209,28 +245,25 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  inputContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
+  input: { flex: 1, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, backgroundColor: "transparent" },
+  sendButton: { backgroundColor: "#3B82F6", padding: 12, borderRadius: 24, marginLeft: 8 },
 
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-  },
-
-  input: {
-    flex: 1,
-    fontSize: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: "transparent",
-  },
-
-  sendButton: {
+  newMessageIndicator: {
+    position: "absolute",
+    bottom: 70,
+    alignSelf: "center",
     backgroundColor: "#3B82F6",
-    padding: 12,
-    borderRadius: 24,
-    marginLeft: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 50,
+  },
+
+  fetchingSpinner: {
+    position: "absolute",
+    top: 70,
+    right: 16,
+    zIndex: 50,
   },
 });

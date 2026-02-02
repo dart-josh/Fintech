@@ -255,6 +255,23 @@ export async function getWalletDetails(data: {
   }
 }
 
+export async function getStatement(data: {
+  userId: string;
+  startDate: string;
+  endDate: string;
+}): Promise<[]> {
+  try {
+    const res: any = await walletApi.getStatement(data);
+
+    if (!res.status) return [];
+
+    return res.wallet;
+  } catch {
+    return [];
+  }
+}
+
+
 interface Beneficiary {
   id: string;
   name: string;
