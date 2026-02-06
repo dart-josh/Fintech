@@ -172,7 +172,7 @@ export async function getWithdrawalStatus(data: {
 
     return res.status;
   } catch (error: any) {
-    console.log('get Status: ', error)
+    console.log("get Status: ", error);
     return null;
   }
 }
@@ -381,6 +381,8 @@ function mapAccountResponse(response: any): AccountDetails {
 export async function getDedicatedAccount(data: {
   userId: string;
 }): Promise<AccountDetails | null> {
+  const toast = useToastStore.getState();
+
   try {
     const res: any = await walletApi.getDedicatedAccount(data);
 
@@ -389,8 +391,11 @@ export async function getDedicatedAccount(data: {
     const txDetails: AccountDetails = mapAccountResponse(res.account);
 
     return txDetails;
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
     return null;
   }
 }

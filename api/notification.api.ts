@@ -4,6 +4,8 @@ export const notificationApi = {
   saveDeviceToken: (data: {
     userId: string;
     token: string;
+    platform: string;
+    token_type: string;
   }) => client.post("/api/notification/saveDevice", data),
 
   deactivateDevice: (data: { userId: string, token: string }) =>

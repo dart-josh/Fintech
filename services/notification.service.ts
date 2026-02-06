@@ -2,10 +2,16 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { notificationApi } from "@/api/notification.api";
 import { useUserStore } from "@/store/user.store";
+import messaging from "@react-native-firebase/messaging";
+import { Platform } from "react-native";
 
-export async function registerForPushNotifications(isNull = false) {
-  const { user, setDeviceToken } = useUserStore.getState();
+async function getFcmToken() {
+  await messaging().requestPermission();
+  const token = await messaging().getToken();
+  return token;
+}
 
+async function getExpoToken() {
   if (!Device.isDevice) return null;
 
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -21,12 +27,49 @@ export async function registerForPushNotifications(isNull = false) {
   }
 
   const token = (await Notifications.getExpoPushTokenAsync()).data;
-
-  if (isNull === false) {
-    notificationApi.saveDeviceToken({ userId: user?.id ?? "", token });
-    setDeviceToken(token);
-  }
   return token;
+}
+
+async function getPushRegistration() {
+  if (Platform.OS === "ios") {
+    const token = await getExpoToken();
+    if (!token) return null;
+    return {
+      token,
+      platform: "ios",
+      token_type: "expo",
+    };
+  }
+
+  if (Platform.OS === "android") {
+    const token = await getFcmToken();
+    if (!token) return null;
+    return {
+      token,
+      platform: "android",
+      token_type: "fcm",
+    };
+  }
+
+  return null;
+}
+
+export async function registerForPushNotifications() {
+  const { user, setDeviceToken } = useUserStore.getState();
+
+  const data = await getPushRegistration();
+
+  if (!data) return null;
+
+  notificationApi.saveDeviceToken({
+    userId: user?.id ?? "",
+    token: data.token,
+    platform: data.platform,
+    token_type: data.token_type,
+  });
+  setDeviceToken(data.token);
+
+  return data.token;
 }
 
 export async function deactivateDevice(): Promise<boolean> {

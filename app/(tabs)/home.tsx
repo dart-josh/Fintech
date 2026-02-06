@@ -70,8 +70,8 @@ const DashboardScreen = () => {
 
     const getToken = async () => {
       const showNotif = await getAppPreference();
-      if (showNotif === null) await registerForPushNotifications(true);
-      if (showNotif) {
+      if (showNotif === null) await registerForPushNotifications();
+      if (showNotif === true) {
         await registerForPushNotifications();
       }
     };

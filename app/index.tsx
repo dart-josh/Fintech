@@ -20,7 +20,7 @@ export default function Index() {
   return <Redirect href="/splash" />;
 }
 
-// eas build --platform android --profile production
+// npx eas build -p android --profile preview
 
 // eas build -p android --profile preview
 
