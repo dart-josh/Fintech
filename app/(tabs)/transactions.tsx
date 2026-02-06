@@ -20,7 +20,8 @@ export default function TransactionsPage() {
   const transactions = wallet?.transactions;
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
-    const isCredit = item.type === "Payment Received";
+    const isCredit = item.type === "Payment Received" || item.type === "Top-up";
+   
     return (
       <TouchableOpacity
         style={{

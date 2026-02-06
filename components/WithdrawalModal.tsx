@@ -3,6 +3,7 @@ import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { formatNumberSpace } from "@/hooks/format.hook";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type WithdrawalModalProps = {
   visible: boolean;
@@ -25,6 +26,7 @@ export default function WithdrawalModal({
   userBalance,
   onConfirm,
 }: WithdrawalModalProps) {
+  const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -33,7 +35,7 @@ export default function WithdrawalModal({
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.card }]}>
+        <View style={[styles.modal, { backgroundColor: colors.card, paddingBottom: insets.bottom}]}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: colors.text }]}>

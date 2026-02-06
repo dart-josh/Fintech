@@ -48,12 +48,12 @@ export default function SecurityScreen() {
       route: "/change-pin",
       mode: "transaction",
     },
-    {
-      label: "Use Face ID / Fingerprint",
-      icon: "smartphone",
-      route: "",
-      switch: true,
-    },
+    // {
+    //   label: "Use Face ID / Fingerprint",
+    //   icon: "smartphone",
+    //   route: "",
+    //   switch: true,
+    // },
     { label: "Show Balance", icon: "eye", route: "", switch: true },
   ];
 

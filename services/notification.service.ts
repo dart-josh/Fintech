@@ -3,7 +3,7 @@ import * as Device from "expo-device";
 import { notificationApi } from "@/api/notification.api";
 import { useUserStore } from "@/store/user.store";
 
-export async function registerForPushNotifications() {
+export async function registerForPushNotifications(isNull = false) {
   const { user, setDeviceToken } = useUserStore.getState();
 
   if (!Device.isDevice) return null;
@@ -22,8 +22,10 @@ export async function registerForPushNotifications() {
 
   const token = (await Notifications.getExpoPushTokenAsync()).data;
 
-  notificationApi.saveDeviceToken({ userId: user?.id ?? "", token });
-  setDeviceToken(token);
+  if (isNull === false) {
+    notificationApi.saveDeviceToken({ userId: user?.id ?? "", token });
+    setDeviceToken(token);
+  }
   return token;
 }
 

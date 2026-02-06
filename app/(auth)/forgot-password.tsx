@@ -16,13 +16,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { resetPassword } from "@/services/auth.service";
+import { isValidEmail } from "@/hooks/format.hook";
 
 export default function ForgotPasswordScreen() {
   const { colors } = useTheme();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
-  const canReset = email.length > 3;
+  const canReset = isValidEmail(email);
 
   const handleReset = async () => {
     const res = await resetPassword(email);

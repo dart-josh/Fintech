@@ -26,9 +26,14 @@ export const walletApi = {
     userId: string;
     amount: number;
     account_number: string;
+    bank_code: string;
     bank_name: string;
     account_name: string;
   }) => client.post("/api/wallet/withdraw", data),
+
+  getWithdrawalStatus: (data: {
+    reference: string;
+  }) => client.post("/api/wallet/get_withdrawal_status", data),
 
   getWalletDetails: (data: { userId: string }) =>
     client.post("/api/wallet/get", data),
@@ -49,13 +54,6 @@ export const walletApi = {
     client.post("/api/beneficiaries", data),
 
   getDedicatedAccount: (data: { userId: string }) =>
-    client.post("/api/wallet/account", data),
+    client.post("/api/wallet/get_account", data),
 
-  fundAccount: (data: { userId: string; amount: string }) =>
-    client.post("/api/wallet/fund_account", data),
-
-  checkTransactionStatus: (data: { reference: string }) =>
-    client.post("/api/wallet/check_tx_status", data),
-
-  isDedicatedNubanEnabled: () => client.post("/api/wallet/nuban_enabled", {}),
 };

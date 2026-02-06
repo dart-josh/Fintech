@@ -17,7 +17,6 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useToastStore } from "@/store/toast.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserStore } from "@/store/user.store";
-import ReceiveMoneyModal from "../(screens)/add-money";
 import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -33,12 +32,6 @@ export default function TabsLayout() {
     Platform.OS === "ios" ? Math.min(insets.bottom, 20) : insets.bottom;
 
   const [modalVisible, setModalVisible] = useState(false);
-
-  const { user } = useUserStore();
-
-  const accountName = `${user?.fullname ?? ""} (PAYSTACK)`;
-  const accountNumber = "9015153464";
-  const bankName = "Paystack wallet";
 
   return (
     <>
@@ -110,9 +103,6 @@ export default function TabsLayout() {
       <DedicatedAccountModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        accountName="Joshua Adelooye"
-        accountNumber="1234567890"
-        bankName="Wema Bank"
       />
 
       {/* CENTER FAB */}

@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
 import { login } from "@/services/auth.service";
+import { isValidEmail } from "@/hooks/format.hook";
 
 export default function LoginScreen() {
   const { colors } = useTheme();
@@ -31,7 +32,7 @@ export default function LoginScreen() {
 
   const inputKey = mode === "phone" ? "phone-input" : "email-input";
   const canLogin =
-    (mode === "phone" ? phone.length === 10 : email.length > 3) &&
+    (mode === "phone" ? phone.length === 10 : isValidEmail(email)) &&
     password.length > 5;
 
   const handleSubmit = async () => {

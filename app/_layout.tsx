@@ -55,6 +55,7 @@ export default function RootLayout() {
       receivedSub.remove();
       responseSub.remove();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

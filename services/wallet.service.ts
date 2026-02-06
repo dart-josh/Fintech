@@ -135,6 +135,7 @@ export async function withdraw(data: {
   userId: string;
   amount: number;
   account_number: string;
+  bank_code: string;
   bank_name: string;
   account_name: string;
 }): Promise<WithdrawalReceipt | null> {
@@ -150,6 +151,7 @@ export async function withdraw(data: {
 
     return res.receipt ?? null;
   } catch (error: any) {
+    console.log(error);
     toast.show({
       message: error.message,
       type: "error",
@@ -157,6 +159,21 @@ export async function withdraw(data: {
     return null;
   } finally {
     hideLoading();
+  }
+}
+
+export async function getWithdrawalStatus(data: {
+  reference: string;
+}): Promise<string | null> {
+  try {
+    const res: any = await walletApi.getWithdrawalStatus(data);
+
+    if (!res.status) return null;
+
+    return res.status;
+  } catch (error: any) {
+    console.log('get Status: ', error)
+    return null;
   }
 }
 
@@ -213,6 +230,7 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
       ...(wallet.withdrawTransactions ?? []).map((tx: any) =>
         mapTx(tx, "withdrawal"),
       ),
+      ...(wallet.topUpTransactions ?? []).map((tx: any) => mapTx(tx, "Top-up")),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
 
     airtimeTransactions: [
@@ -229,6 +247,10 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
       ...(wallet.withdrawTransactions ?? []).map((tx: any) =>
         mapTx(tx, "withdrawal"),
       ),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+    topUpTransactions: [
+      ...(wallet.topUpTransactions ?? []).map((tx: any) => mapTx(tx, "Top-up")),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   };
 };
@@ -270,7 +292,6 @@ export async function getStatement(data: {
     return [];
   }
 }
-
 
 interface Beneficiary {
   id: string;
@@ -369,66 +390,7 @@ export async function getDedicatedAccount(data: {
 
     return txDetails;
   } catch (error) {
+    console.log(error);
     return null;
-  }
-}
-
-export type TransactionDetails = {
-  reference: string;
-  bank_name: string;
-  account_number: string;
-  expires_at?: string | null;
-  amount: number;
-};
-function mapTransactionResponse(response: any): TransactionDetails {
-  return {
-    reference: response?.reference ?? "",
-    bank_name: response?.bank_name ?? "",
-    account_number: response?.account_number ?? "",
-    expires_at: response?.expires_at,
-    amount: response?.amount,
-  };
-}
-
-export async function fundAccount(data: {
-  userId: string;
-  amount: string;
-}): Promise<TransactionDetails | null> {
-  try {
-    const res = await walletApi.fundAccount(data);
-
-    if (!res.status) return null;
-
-    const txDetails: TransactionDetails = mapTransactionResponse(res.data);
-
-    return txDetails;
-  } catch (error) {
-    // console.log(error);
-    return null;
-  }
-}
-
-export async function checkTransactionStatus(data: {
-  reference: string;
-}): Promise<string | null> {
-  try {
-    const res = await walletApi.checkTransactionStatus(data);
-
-    return "" + res.status;
-  } catch (error) {
-    // console.log(error);
-    return null;
-  }
-}
-
-export async function isDedicatedNubanEnabled(): Promise<boolean> {
-  try {
-    const res: any = await walletApi.isDedicatedNubanEnabled();
-
-    if (!res.status) return false;
-
-    return res.enabled;
-  } catch (error) {
-    return false;
   }
 }

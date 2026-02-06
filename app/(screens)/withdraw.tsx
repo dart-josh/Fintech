@@ -43,7 +43,7 @@ export default function WithdrawScreen() {
 
   useEffect(() => {
     getBanks()
-      .then((banks) => {
+      .then((banks: any) => {
         setBanks(banks);
       })
       .catch((err) => {
@@ -63,7 +63,7 @@ export default function WithdrawScreen() {
       setFetchingName(true);
 
       try {
-        const res = await resolveAccount({
+        const res : any = await resolveAccount({
           account_number: accountNumber,
           bank_code: selectedBank?.code ?? "",
         });
@@ -81,7 +81,7 @@ export default function WithdrawScreen() {
   }, [accountNumber, selectedBank]);
 
   const canWithdraw =
-    accountName !== "" && accountName !== "invalid" && Number(amount) >= 2000;
+    accountName !== "" && accountName !== "invalid" && Number(amount) >= 100;
 
   const [withdrawModal, setWithdrawModal] = useState(false);
 
@@ -133,6 +133,7 @@ export default function WithdrawScreen() {
         amount: Number(amount),
         account_number: accountNumber,
         bank_name: selectedBank?.name ?? "",
+        bank_code: selectedBank?.code ?? "",
         account_name: accountName,
       });
 
@@ -334,7 +335,7 @@ export default function WithdrawScreen() {
 
         {/* ---------------- AMOUNT INPUT ---------------- */}
         <Text style={{ fontWeight: "600", color: colors.textPrimary }}>
-          Amount to withdraw (minimum ₦2,000)
+          Amount to withdraw (minimum ₦100)
         </Text>
 
         <View
@@ -362,7 +363,7 @@ export default function WithdrawScreen() {
             value={amount}
             onChangeText={(v) => setAmount(v.replace(/[^0-9]/g, ""))}
             keyboardType="numeric"
-            placeholder="2,000"
+            placeholder="100"
             placeholderTextColor={colors.textSecondary}
             style={{
               flex: 1,

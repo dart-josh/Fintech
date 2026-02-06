@@ -18,7 +18,6 @@ import { transactions } from "@/utils/globalVariables";
 import { fetchUser } from "@/services/user.service";
 import { useRegisterStore } from "@/store/register.store";
 import { useUserStore } from "@/store/user.store";
-import ReceiveMoneyModal from "../(screens)/add-money";
 import * as Clipboard from "expo-clipboard";
 import { useWalletStore } from "@/store/wallet.store";
 import { capitalizeFirst, formatToMonthDay } from "@/hooks/format.hook";
@@ -44,13 +43,7 @@ const DashboardScreen = () => {
 
   const { user, verificationDetails } = useUserStore();
 
-  const [showAccount, setShowAccount] = useState(false);
-
   const [modalVisible, setModalVisible] = useState(false);
-
-  const accountName = `${user?.fullname ?? ""} (PAYSTACK)`;
-  const accountNumber = "9015153464";
-  const bankName = "Paystack wallet";
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -68,14 +61,16 @@ const DashboardScreen = () => {
   }, [showBalance]);
 
   useEffect(() => {
-    const getAppPreference = async (): Promise<boolean> => {
+    const getAppPreference = async (): Promise<boolean | null> => {
       const value = await SecureStore.getItemAsync("showAppNotif");
+      if (!value) return null;
       const showNotif = value === "true";
       return showNotif;
     };
 
     const getToken = async () => {
       const showNotif = await getAppPreference();
+      if (showNotif === null) await registerForPushNotifications(true);
       if (showNotif) {
         await registerForPushNotifications();
       }
@@ -144,19 +139,10 @@ const DashboardScreen = () => {
 
         <SpendingInsights isDark={isDark} transactions={transactions} />
       </ScrollView>
-      {/* <ReceiveMoneyModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-        accountName={accountName}
-        accountNumber={accountNumber}
-        bankName={bankName}
-      /> */}
+
       <DedicatedAccountModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        accountName="Joshua Adelooye"
-        accountNumber="1234567890"
-        bankName="Wema Bank"
       />
     </View>
   );
@@ -709,7 +695,7 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
       </Text>
 
       {recent.map((tx) => {
-        const isCredit = tx.type === "Payment Received";
+        const isCredit = tx.type === "Payment Received" || tx.type === "Top-up";
 
         return (
           <View
@@ -836,7 +822,12 @@ function SpendingInsights({ isDark, transactions }: Props) {
         { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" },
       ]}
     >
-      <Text style={[InsightsStyles.title, { color: isDark ? "#FFF" : "#000", marginBottom: 30 }]}>
+      <Text
+        style={[
+          InsightsStyles.title,
+          { color: isDark ? "#FFF" : "#000", marginBottom: 30 },
+        ]}
+      >
         Spending Insights
       </Text>
 
@@ -857,7 +848,8 @@ function SpendingInsights({ isDark, transactions }: Props) {
                     {
                       height: `${heightPercent}%`,
                       backgroundColor:
-                        item.type === "Payment Received"
+                        item.type === "Payment Received" ||
+                        item.type === "Top-up"
                           ? "#22C55E" // credit
                           : "#EF4444", // debit
                     },

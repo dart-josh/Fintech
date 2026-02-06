@@ -1,5 +1,4 @@
 export function formatNGPhone(input: string) {
-  
   const digits = input.replace(/\D/g, "");
 
   // remove leading 0 or 234 if user typed it
@@ -26,8 +25,7 @@ export const formatNumberSpace = (val: string | number) => {
 
   // Split as: 3 - 4 - rest
   if (digits.length <= 3) return digits;
-  if (digits.length <= 7)
-    return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  if (digits.length <= 7) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
 
   return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
 };
@@ -48,7 +46,7 @@ export function getInitials(fullName: string) {
 
 // Output: "17 Jan 2026 • 10:42 AM"
 export function formatCurrentDate(date: string) {
-  if (!date) return '';
+  if (!date) return "";
   const now = new Date(date);
 
   // Options for the date part
@@ -68,11 +66,10 @@ export function formatCurrentDate(date: string) {
  */
 export const formatToMonthDay = (datetime: string): string => {
   // Split the date and time part
-  const [datePart] = datetime.split(' ');
-  const [, month, day] = datePart.split('-');
+  const [datePart] = datetime.split(" ");
+  const [, month, day] = datePart.split("-");
   return `${month}-${day}`;
 };
-
 
 /**
  * Converts a formatted amount string back to number
@@ -96,7 +93,5 @@ export const capitalizeFirst = (value?: string) => {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 };
 
-
-
-
-
+export const isValidEmail = (value: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());

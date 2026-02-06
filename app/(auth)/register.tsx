@@ -18,6 +18,7 @@ import { useRouter } from "expo-router";
 import { sendEmailCode } from "@/services/auth.service";
 import { useToastStore } from "@/store/toast.store";
 import { useRegisterStore } from "@/store/register.store";
+import { isValidEmail } from "@/hooks/format.hook";
 
 export default function SignupScreen() {
   const { colors } = useTheme();
@@ -26,7 +27,7 @@ export default function SignupScreen() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
-  const canContinue = phone.length === 10 && email.length > 3;
+  const canContinue = phone.length === 10 && isValidEmail(email);
 
   const handleRegister = async () => {
     const toast = useToastStore.getState();

@@ -28,6 +28,7 @@ export type WalletDetails = {
   airtimeTransactions: Transaction[];
   dataTransactions: Transaction[];
   withdrawTransactions: Transaction[];
+  topUpTransactions: Transaction[];
 };
 
 type WalletStore = {

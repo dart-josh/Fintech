@@ -43,7 +43,7 @@ export default function TransactionDetails() {
       description: string;
       date: string;
     }>();
-  const isCredit = type === "Payment Received";
+  const isCredit = type === "Payment Received"  || type === "Top-up";
   const statusStyle = statusConfig[status];
   const formattedAmount = Number(amount).toLocaleString();
 

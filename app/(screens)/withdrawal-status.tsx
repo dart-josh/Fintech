@@ -1,10 +1,24 @@
-import React from "react";
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from "react-native";
+import {
+  SafeAreaProvider,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useTheme } from "@/theme/ThemeContext";
-import { WithdrawalReceipt } from "@/services/wallet.service";
+import {
+  getWithdrawalStatus,
+  WithdrawalReceipt,
+} from "@/services/wallet.service";
+import { fetchUser } from "@/services/user.service";
+import { useUserStore } from "@/store/user.store";
 
 export default function WithdrawalStatusPage() {
   const insets = useSafeAreaInsets();
@@ -24,14 +38,16 @@ export default function WithdrawalStatusPage() {
     method: params.method ?? "Bank Withdrawal",
   };
 
+  const [status, setStatus] = useState(receipt.status);
+
   const handleShareReceipt = async () => {
     router.push({
       pathname: "/receipt",
       params: {
         id: `tf-${receipt.date}`,
-        type: 'Withdrawal',
+        type: "Withdrawal",
         amount: receipt.amount.replace(/,/g, ""),
-        status: receipt.status,
+        status: status,
         reference: receipt.reference,
         description: `Withdrawal to ${receipt.account_name} (${receipt.bank_name})`,
         date: receipt.date,
@@ -60,10 +76,47 @@ export default function WithdrawalStatusPage() {
     },
   };
 
-  const current = statusConfig[receipt.status as keyof typeof statusConfig];
+  const current = statusConfig[status as keyof typeof statusConfig];
+
+  
+
+  useEffect(() => {
+    if (!receipt.reference) return;
+
+    let intervalId: any;
+
+    const fetchStatus = async () => {
+      const { user } = useUserStore.getState();
+      try {
+        const res = await getWithdrawalStatus({ reference: receipt.reference });
+
+        if (res) {
+          console.log('Success -- ', res)
+          setStatus(res);
+
+          // Stop polling once resolved
+          if (res !== "pending") {
+            fetchUser(user?.id ?? "");
+            clearInterval(intervalId);
+          }
+        }
+      } catch (err) {
+        console.error("Status check failed", err);
+      }
+    };
+
+    // Initial fetch
+    fetchStatus();
+
+    // Poll every 5 seconds
+    intervalId = setInterval(fetchStatus, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [receipt.reference]);
 
   return (
     <SafeAreaProvider>
+      <View style={{flex: 1, paddingBottom: insets.bottom}}>
       {/* Header */}
       <View
         style={[
@@ -88,23 +141,32 @@ export default function WithdrawalStatusPage() {
       </View>
 
       <ScrollView
-        style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        style={{ flex: 1, backgroundColor: colors.background, paddingBottom: insets.bottom }}
+        contentContainerStyle={{ padding: 16 }}
         showsVerticalScrollIndicator={false}
       >
         {/* Status Card */}
         <View style={[styles.statusCard, { backgroundColor: colors.card }]}>
           <View
-            style={[styles.statusIconWrap, { backgroundColor: current.color + "22" }]}
+            style={[
+              styles.statusIconWrap,
+              { backgroundColor: current.color + "22" },
+            ]}
           >
-            <Feather name={current.icon as any} size={48} color={current.color} />
+            <Feather
+              name={current.icon as any}
+              size={48}
+              color={current.color}
+            />
           </View>
 
           <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>
             {current.title}
           </Text>
 
-          <Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>
+          <Text
+            style={[styles.statusSubtitle, { color: colors.textSecondary }]}
+          >
             {current.subtitle}
           </Text>
 
@@ -113,7 +175,8 @@ export default function WithdrawalStatusPage() {
           </Text>
 
           <Text style={{ color: colors.textSecondary }}>
-            To {receipt.account_name} ({receipt.account_number}) - {receipt.bank_name}
+            To {receipt.account_name} ({receipt.account_number}) -{" "}
+            {receipt.bank_name}
           </Text>
         </View>
 
@@ -130,11 +193,11 @@ export default function WithdrawalStatusPage() {
           {detail("Account Number", receipt.account_number, colors)}
           {detail("Bank Name", receipt.bank_name, colors)}
           {detail("Method", receipt.method, colors)}
-          {detail("Status", receipt.status.toUpperCase(), colors)}
+          {detail("Status", status.toUpperCase(), colors)}
         </View>
 
         {/* Actions */}
-        {receipt.status === "failed" ? (
+        {status === "failed" ? (
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.secondaryBtn, { backgroundColor: colors.surface }]}
@@ -143,7 +206,9 @@ export default function WithdrawalStatusPage() {
                 router.back();
               }}
             >
-              <Text style={[styles.secondaryText, { color: colors.error }]}>Cancel</Text>
+              <Text style={[styles.secondaryText, { color: colors.error }]}>
+                Cancel
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -173,6 +238,7 @@ export default function WithdrawalStatusPage() {
           </View>
         )}
       </ScrollView>
+      </View>
     </SafeAreaProvider>
   );
 }
@@ -181,7 +247,9 @@ export default function WithdrawalStatusPage() {
 const detail = (label: string, value: string, colors: any) => (
   <View style={styles.detailRow}>
     <Text style={{ color: colors.textSecondary }}>{label}</Text>
-    <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>{value}</Text>
+    <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
+      {value}
+    </Text>
   </View>
 );
 
