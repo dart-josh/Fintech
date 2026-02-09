@@ -225,7 +225,7 @@ export default function SendPage() {
             )}
           </TouchableOpacity>
 
-          <View style={{ marginTop: 40 }}>
+          <View style={{ marginTop: 10 }}>
             <NewBeneficiaryModal
               onSelectRecipient={(data) => {
                 if (data.paymentCode === user?.payment_code) {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 18,
     padding: 20,
-    marginTop: 16,
+    // marginTop: 16,
   },
   row: { flexDirection: "row", alignItems: "center" },
   avatar: {

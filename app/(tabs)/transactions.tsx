@@ -21,7 +21,8 @@ export default function TransactionsPage() {
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isCredit = item.type === "Payment Received" || item.type === "Top-up";
-   
+    const isFailed = item.status === "failed";
+
     return (
       <TouchableOpacity
         style={{
@@ -64,9 +65,15 @@ export default function TransactionsPage() {
 
           <Text
             style={{
-              color: isCredit ? "#22C55E" : "#EF4444",
+              color: isFailed
+                ? "#9CA3AF" // disabled gray
+                : isCredit
+                  ? "#22C55E"
+                  : "#EF4444",
               fontWeight: "700",
               fontSize: 16,
+              textDecorationLine: isFailed ? "line-through" : "none",
+              opacity: isFailed ? 0.6 : 1
             }}
           >
             ₦{item.amount.toLocaleString()}

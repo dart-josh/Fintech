@@ -18,6 +18,7 @@ import { useToastStore } from "@/store/toast.store";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useUserStore } from "@/store/user.store";
 import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
+import { sendEmailCode } from "@/services/auth.service";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -182,6 +183,7 @@ function QuickActionModal({
     { icon: "wifi", label: "Data", route: "data-top-up" },
     { icon: "credit-card", label: "Withdraw", route: "withdraw" },
     { icon: "download", label: "Top Up", route: "modal" },
+    { icon: "download", label: "Escrow", route: "escrow-screen" },
   ];
 
   return (
@@ -202,8 +204,6 @@ function QuickActionModal({
     </Modal>
   );
 }
-
-
 
 /* ======================================================
    GRID ITEM
@@ -244,10 +244,20 @@ function ActionItem({
                 type: "warning",
                 message: "Transaction PIN Not set",
               });
-              Alert.alert(
-                "Set Transaction PIN",
-                `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
-              );
+              router.push("/security");
+              sendEmailCode(user?.email ?? "");
+              router.push({
+                pathname: "/verify-otp",
+                params: {
+                  flow: "change-pin",
+                  target: user?.email ?? "",
+                  mode: "transaction",
+                },
+              });
+              // Alert.alert(
+              //   "Set Transaction PIN",
+              //   `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
+              // );
               return;
             }
           }

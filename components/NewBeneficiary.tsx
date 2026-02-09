@@ -14,16 +14,11 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/theme/ThemeContext";
-import {
-  getUserByPaymentCode,
-} from "@/services/wallet.service";
+import { getUserByPaymentCode } from "@/services/wallet.service";
 import QRCodeScannerModal from "@/components/QRCodeScannerModal";
 
 interface Props {
-  onSelectRecipient: (recipient: {
-    name: string;
-    paymentCode: string;
-  }) => void;
+  onSelectRecipient: (recipient: { name: string; paymentCode: string }) => void;
 }
 
 export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
@@ -67,6 +62,17 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
     fetchUserByCode(text);
   };
 
+  const onCodeChange = async (value: string) => {
+    if (value.length !== 10) {
+      setVerifiedName(null);
+      setError("");
+      setAddError("");
+    } else {
+      fetchUserByCode(`AGP-${value}`);
+    }
+    setPaymentCode(value);
+  };
+
   const handleQRCodeScanned = (text: string) => {
     const clean = text.startsWith("AGP-") ? text.slice(4) : text;
     setPaymentCode(clean);
@@ -88,6 +94,8 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
       name: verifiedName,
       paymentCode: `AGP-${paymentCode}`,
     });
+
+    clearRecipient();
   };
 
   return (
@@ -95,26 +103,34 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={[styles.container, { backgroundColor: cardBg }]}>
-            <Text style={[styles.title, { color: textColor }]}>
-              Recipient
-            </Text>
+        <View style={styles.scanWrapper}>
+          <View style={[styles.scanCard, { backgroundColor: cardBg }]}>
+            <TouchableOpacity
+              onPress={() => setShowQRModal(true)}
+              activeOpacity={0.85}
+              style={styles.scanButton}
+            >
+              <Feather name="maximize" size={26} color="#00E5FF" />
+            </TouchableOpacity>
+          </View>
 
+          <Text style={styles.scanText}>Scan QR Code</Text>
+        </View>
+        
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={[styles.container, { backgroundColor: cardBg, marginTop: 10 }]}>
             {/* Payment Code */}
-            <Text style={[styles.label, { color: "#888" }]}>
-              Payment Code
-            </Text>
+            <Text style={[styles.label, { color: "#888" }]}>Payment Code</Text>
 
             <View style={styles.inputRow}>
               <View style={[styles.prefix, { backgroundColor: inputBg }]}>
-                <Text style={styles.prefixText}>AGP-</Text>
+                <Text style={styles.prefixText}>AGP - </Text>
               </View>
 
               <TextInput
                 value={paymentCode}
-                onChangeText={setPaymentCode}
-                placeholder="Enter payment code"
+                onChangeText={onCodeChange}
+                placeholder="123456789"
                 placeholderTextColor="#999"
                 style={[
                   styles.input,
@@ -122,10 +138,7 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
                 ]}
               />
 
-              <TouchableOpacity
-                onPress={handlePaste}
-                style={styles.iconButton}
-              >
+              <TouchableOpacity onPress={handlePaste} style={styles.iconButton}>
                 <Feather name="clipboard" size={20} color="#007AFF" />
               </TouchableOpacity>
             </View>
@@ -137,12 +150,7 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
                   <Text style={[styles.label, { color: "#888" }]}>
                     Recipient Name
                   </Text>
-                  <Text
-                    style={[
-                      styles.verifiedName,
-                      { color: textColor },
-                    ]}
-                  >
+                  <Text style={[styles.verifiedName, { color: textColor }]}>
                     {verifiedName}
                   </Text>
                 </View>
@@ -157,27 +165,18 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
             )}
 
             {/* Actions */}
-            <View style={styles.actionRow}>
+            {verifiedName && (
               <TouchableOpacity
                 onPress={
-                  verifiedName
-                    ? handleSelectRecipient
-                    : () => fetchUserByCode()
+                  verifiedName ? handleSelectRecipient : () => fetchUserByCode()
                 }
-                style={styles.primaryButton}
+                style={[styles.primaryButton, { marginTop: 15 }]}
               >
                 <Text style={styles.primaryButtonText}>
                   {verifiedName ? "Select Recipient" : "Search"}
                 </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setShowQRModal(true)}
-                style={styles.iconButton}
-              >
-                <Feather name="maximize" size={20} color="#007AFF" />
-              </TouchableOpacity>
-            </View>
+            )}
 
             {loading && (
               <View style={styles.loadingRow}>
@@ -187,12 +186,12 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
             )}
 
             {(error || addError) && (
-              <Text style={styles.errorText}>
-                {error || addError}
-              </Text>
+              <Text style={styles.errorText}>{error || addError}</Text>
             )}
           </View>
         </TouchableWithoutFeedback>
+
+        
       </KeyboardAvoidingView>
 
       {/* QR Scanner */}
@@ -228,18 +227,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   prefix: {
-    paddingHorizontal: 12,
+    paddingLeft: 12,
     paddingVertical: 12,
     borderTopLeftRadius: 12,
     borderBottomLeftRadius: 12,
+    letterSpacing: 1.5,
   },
   prefixText: {
     color: "#007AFF",
     fontWeight: "700",
+    fontSize: 16,
   },
   input: {
     flex: 1,
-    paddingHorizontal: 14,
+    paddingRight: 14,
+    paddingLeft: 3,
     paddingVertical: 12,
     fontSize: 16,
     borderTopRightRadius: 12,
@@ -295,5 +297,54 @@ const styles = StyleSheet.create({
     color: "red",
     marginTop: 12,
     textAlign: "center",
+  },
+
+  scanWrapper: {
+    alignItems: "center",
+    marginVertical: 20,
+  },
+
+  scanCard: {
+    width: 150,
+    height: 150,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+
+    // Glassmorphism feel
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.15)",
+
+    // Depth
+    shadowColor: "#00E5FF",
+    shadowOpacity: 0.35,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 12,
+  },
+
+  scanButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+
+    backgroundColor: "rgba(0,229,255,0.12)",
+
+    // Neon glow
+    shadowColor: "#00E5FF",
+    shadowOpacity: 0.6,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+
+  scanText: {
+    marginTop: 14,
+    fontSize: 15,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    color: "#9CA3AF",
+    textTransform: "uppercase",
   },
 });

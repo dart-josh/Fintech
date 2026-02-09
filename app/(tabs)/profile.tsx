@@ -77,6 +77,7 @@ export default function ProfileScreen() {
             },
             { label: "Bank Statement", icon: "file-text", route: "bank-statement" },
             // { label: "Device Management", icon: "smartphone", route: "" },
+            { label: "How to Use", icon: "info", route: "how-to-use-screen" },
             { label: "Contact Us", icon: "help-circle", route: "chat-page" },
             { label: "Terms & Conditions", icon: "file", route: "" },
             { label: "Visit Our Website", icon: "globe", route: "" },

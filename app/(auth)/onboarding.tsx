@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { registerUser } from "@/services/auth.service";
 import { useRegisterStore } from "@/store/register.store";
+import { capitalizeFirst } from "@/hooks/format.hook";
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
@@ -42,7 +43,7 @@ export default function OnboardingScreen() {
     if (!canContinue) return;
     try {
       setLoading(true);
-      const fullname = `${f_name.trim()} ${l_name.trim()}`;
+      const fullname = `${capitalizeFirst(f_name.trim())} ${capitalizeFirst(l_name.trim())}`;
       setDetails({ full_name: fullname, username, password });
       const success = await registerUser({
         email,

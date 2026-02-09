@@ -26,6 +26,7 @@ import { useUIStore } from "@/store/ui.store";
 import { registerForPushNotifications } from "@/services/notification.service";
 import * as SecureStore from "expo-secure-store";
 import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
+import { sendEmailCode } from "@/services/auth.service";
 
 // MAIN DASHBOARD SCREEN
 
@@ -387,10 +388,16 @@ const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
                   type: "warning",
                   message: "Transaction PIN Not set",
                 });
-                Alert.alert(
-                  "Set Transaction PIN",
-                  `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
-                );
+                router.push("/security");
+                sendEmailCode(user?.email ?? "");
+                router.push({
+                  pathname: "/verify-otp",
+                  params: {
+                    flow: "change-pin",
+                    target: user?.email ?? "",
+                    mode: "transaction",
+                  },
+                });
                 return;
               }
 
@@ -612,10 +619,20 @@ const QuickActions = ({ isDark, setModalVisible }: any) => {
                       type: "warning",
                       message: "Transaction PIN Not set",
                     });
-                    Alert.alert(
-                      "Set Transaction PIN",
-                      `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
-                    );
+                    router.push("/security");
+                    sendEmailCode(user?.email ?? "");
+                    router.push({
+                      pathname: "/verify-otp",
+                      params: {
+                        flow: "change-pin",
+                        target: user?.email ?? "",
+                        mode: "transaction",
+                      },
+                    });
+                    // Alert.alert(
+                    //   "Set Transaction PIN",
+                    //   `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
+                    // );
                     return;
                   }
                 }
@@ -696,6 +713,7 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
 
       {recent.map((tx) => {
         const isCredit = tx.type === "Payment Received" || tx.type === "Top-up";
+        const isFailed = tx.status === "failed";
 
         return (
           <View
@@ -743,8 +761,14 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
               style={[
                 TransactionStyles.amount,
                 {
-                  color: isCredit ? "#22C55E" : "#EF4444",
+                  color: isFailed
+                    ? "#9CA3AF" // disabled gray
+                    : isCredit
+                      ? "#22C55E"
+                      : "#EF4444",
                   flexShrink: 0, // 👈 NEVER SHRINK
+                  textDecorationLine: isFailed ? "line-through" : "none",
+                  opacity: isFailed ? 0.6 : 1,
                 },
               ]}
             >
@@ -836,6 +860,7 @@ function SpendingInsights({ isDark, transactions }: Props) {
         <View style={InsightsStyles.chart}>
           {data.map((item) => {
             const heightPercent = (Number(item.amount) / maxAmount) * 100;
+            const isFailed = item.status === "failed";
 
             return (
               <View
@@ -847,11 +872,13 @@ function SpendingInsights({ isDark, transactions }: Props) {
                     InsightsStyles.bar,
                     {
                       height: `${heightPercent}%`,
-                      backgroundColor:
-                        item.type === "Payment Received" ||
-                        item.type === "Top-up"
+                      backgroundColor: isFailed
+                        ? "#9CA3AF"
+                        : item.type === "Payment Received" ||
+                            item.type === "Top-up"
                           ? "#22C55E" // credit
                           : "#EF4444", // debit
+                      opacity: isFailed ? 0.7 : 1,
                     },
                   ]}
                 />

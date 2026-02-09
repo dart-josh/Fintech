@@ -69,11 +69,15 @@ export const AddBeneficiaryModal: React.FC<Props> = ({ visible, onClose }) => {
 
   const handleAdd = async () => {
     const { user, setBeneficiaries, beneficiaries } = useUserStore.getState();
-    if (!verifiedName || !nickname.trim()) return;
+    if (!verifiedName) return;
+
+    if (!nickname.trim()) {
+      setNickname(verifiedName.split(' ')[0]);
+    }
 
     const newB: Beneficiary | null | string = await addBeneficiary({
       payment_code: `AGP-${paymentCode}`,
-      nickname,
+      nickname: !nickname.trim() ? verifiedName.split(' ')[0] : nickname.trim(),
       user_id: user?.id ?? "",
     });
 
@@ -144,7 +148,7 @@ export const AddBeneficiaryModal: React.FC<Props> = ({ visible, onClose }) => {
 
               {/* Fetch button below input */}
               <TouchableOpacity onPress={() => fetchUserByCode()} style={styles.fetchButton}>
-                <Text style={styles.fetchButtonText}>Fetch</Text>
+                <Text style={styles.fetchButtonText}>Search</Text>
               </TouchableOpacity>
 
               {loading && (

@@ -2,13 +2,14 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import { notificationApi } from "@/api/notification.api";
 import { useUserStore } from "@/store/user.store";
-import messaging from "@react-native-firebase/messaging";
+// import messaging from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
 
 async function getFcmToken() {
-  await messaging().requestPermission();
-  const token = await messaging().getToken();
-  return token;
+  // await messaging().requestPermission();
+  // const token = await messaging().getToken();
+  // return token;
+  return null;
 }
 
 async function getExpoToken() {

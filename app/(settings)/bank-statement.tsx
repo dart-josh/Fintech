@@ -53,7 +53,9 @@ export default function BankStatementPage() {
         filterType: tx.type,
       }));
 
-      setTransactions(mapped);
+      const final = mapped.filter((t : any) => t.status !== 'failed');
+
+      setTransactions(final);
     } catch (err) {
       console.error(err);
       setTransactions([]);

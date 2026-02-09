@@ -9,13 +9,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Pressable,
+  ToastAndroid,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { getMessages, storeMessage } from "@/services/support.service";
 import { useUserStore } from "@/store/user.store";
+import * as Haptics from "expo-haptics";
+import { useToastStore } from "@/store/toast.store";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -47,8 +52,18 @@ export default function ChatPage() {
 
       // If user is at bottom, auto-scroll
       if (isAtBottom) {
-        setMessages(formatted);
-        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+        setMessages([
+          {
+            id: "2323981287",
+            text: "Hello,\nHow can we be of assistance to you?",
+            sender: "support",
+          },
+          ...formatted,
+        ]);
+        setTimeout(
+          () => flatListRef.current?.scrollToEnd({ animated: true }),
+          50,
+        );
       } else {
         // User scrolled up, show indicator for new messages
         const newMsgs = formatted.length - messages.length;
@@ -84,7 +99,7 @@ export default function ChatPage() {
 
     try {
       await storeMessage({
-        userId: user.id,
+        userId: user?.id ?? "",
         message: input,
         senderType: "user",
       });
@@ -97,23 +112,50 @@ export default function ChatPage() {
   const renderMessage = ({ item }: { item: any }) => {
     const isUser = item.sender === "user";
     return (
-      <View
-        style={[
-          styles.messageContainer,
-          {
-            alignSelf: isUser ? "flex-end" : "flex-start",
-            backgroundColor: isUser
-              ? colors.primary
-              : isDark
-              ? "#2E2E3A"
-              : "#F3F4F6",
-          },
+      <Pressable
+        onLongPress={async () => {
+          const toast = useToastStore.getState();
+          await Clipboard.setStringAsync(item.text);
+
+          if (Platform.OS === "android") {
+            ToastAndroid.show("Copied to clipboard", ToastAndroid.SHORT);
+          } else {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+          }
+
+          toast.show({
+            message: "Message copied",
+            type: "success",
+          });
+        }}
+        delayLongPress={350}
+        style={({ pressed }) => [
+          pressed && { opacity: 0.75, transform: [{ scale: 0.85 }] },
         ]}
       >
-        <Text style={{ color: isUser ? "#fff" : colors.textPrimary, fontSize: 14 }}>
-          {item.text}
-        </Text>
-      </View>
+        <View
+          style={[
+            styles.messageContainer,
+            {
+              alignSelf: isUser ? "flex-end" : "flex-start",
+              backgroundColor: isUser
+                ? colors.primary
+                : isDark
+                  ? "#2E2E3A"
+                  : "#F3F4F6",
+            },
+          ]}
+        >
+          <Text
+            style={{
+              color: isUser ? "#fff" : colors.textPrimary,
+              fontSize: 14,
+            }}
+          >
+            {item.text}
+          </Text>
+        </View>
+      </Pressable>
     );
   };
 
@@ -122,11 +164,21 @@ export default function ChatPage() {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20;
     const atBottom =
-      layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom;
     setIsAtBottom(atBottom);
 
     if (atBottom) setNewMessageCount(0);
   };
+
+  if (messages.length === 0 && !isFetching)
+    setMessages([
+      {
+        id: "2323981287",
+        text: "Hello,\nHow can we be of assistance to you?",
+        sender: "support",
+      },
+    ]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -149,10 +201,17 @@ export default function ChatPage() {
         </TouchableOpacity>
 
         <View style={styles.supportTitleWrapper}>
-          <View style={[styles.supportIcon, { backgroundColor: colors.primary + "33" }]}>
+          <View
+            style={[
+              styles.supportIcon,
+              { backgroundColor: colors.primary + "33" },
+            ]}
+          >
             <Ionicons name="headset" size={20} color={colors.primary} />
           </View>
-          <Text style={[styles.supportTitle, { color: colors.textPrimary }]}>Support</Text>
+          <Text style={[styles.supportTitle, { color: colors.textPrimary }]}>
+            Support
+          </Text>
         </View>
       </View>
 
@@ -177,7 +236,9 @@ export default function ChatPage() {
             setNewMessageCount(0);
           }}
         >
-          <Text style={{ color: "#fff" }}>{newMessageCount} New Message(s)</Text>
+          <Text style={{ color: "#fff" }}>
+            {newMessageCount} New Message(s)
+          </Text>
         </TouchableOpacity>
       )}
 
@@ -230,9 +291,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     zIndex: 10,
   },
-  backButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginRight: 12 },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
   supportTitleWrapper: { flexDirection: "row", alignItems: "center" },
-  supportIcon: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", marginRight: 8 },
+  supportIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 8,
+  },
   supportTitle: { fontSize: 20, fontWeight: "600" },
   messageContainer: {
     maxWidth: "75%",
@@ -245,9 +320,27 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  inputContainer: { flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 8, borderTopWidth: 1 },
-  input: { flex: 1, fontSize: 16, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 20, backgroundColor: "transparent" },
-  sendButton: { backgroundColor: "#3B82F6", padding: 12, borderRadius: 24, marginLeft: 8 },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderTopWidth: 1,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: "transparent",
+  },
+  sendButton: {
+    backgroundColor: "#3B82F6",
+    padding: 12,
+    borderRadius: 24,
+    marginLeft: 8,
+  },
 
   newMessageIndicator: {
     position: "absolute",
