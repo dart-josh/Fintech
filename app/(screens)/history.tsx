@@ -84,7 +84,10 @@ export default function TransactionsPage() {
               opacity: isFailed ? 0.6 : 1,
             }}
           >
-            ₦{item.amount.toLocaleString()}
+            ₦
+            {Number(item.amount).toLocaleString("en-US", {
+              maximumFractionDigits: 2,
+            })}
           </Text>
         </View>
 

@@ -10,6 +10,7 @@ export const lightColors = {
 
   background: "#F4F6F8",
   card: "#FFFFFF",
+  backgroundOff: "#FFFFFF",   // slightly deeper than #F4F6F8
 
   text: "#0F172A",
   textMuted: "#6B7280",
@@ -38,6 +39,7 @@ export const darkColors = {
   danger: "#F87171",
   background: "#0B0F14",
   card: "#121826",
+  backgroundOff: "#141A21",   // slightly lighter than #0B0F14
 
   text: "#E5E7EB",
   textMuted: "#9CA3AF",

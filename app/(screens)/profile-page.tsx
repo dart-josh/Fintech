@@ -23,7 +23,7 @@ export default function ProfilePage() {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
 
-  const {user, verificationDetails} = useUserStore();
+  const { user, verificationDetails } = useUserStore();
 
   const verified = verificationDetails?.userVerified;
 
@@ -78,13 +78,17 @@ export default function ProfilePage() {
             <View
               style={[styles.profileIcon, { backgroundColor: colors.primary }]}
             >
-              <Text style={styles.profileInitials}>{getInitials(user?.fullname ?? "-")}</Text>
-              {verified && <Ionicons
-                name="checkmark-circle"
-                size={16}
-                color="#4ADE80"
-                style={styles.verificationIcon}
-              />}
+              <Text style={styles.profileInitials}>
+                {getInitials(user?.fullname ?? "-")}
+              </Text>
+              {verified && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={16}
+                  color="#4ADE80"
+                  style={styles.verificationIcon}
+                />
+              )}
             </View>
           </View>
           <View style={styles.profileText}>
@@ -107,13 +111,19 @@ export default function ProfilePage() {
             },
           ]}
         >
-          <DetailRow label="First Name" value={user?.fullname.split(' ')![0] ?? ''} />
-          <DetailRow label="Last Name" value={user?.fullname.split(' ')![1] ?? ''} />
+          <DetailRow
+            label="First Name"
+            value={user?.fullname.split(" ")![0] ?? ""}
+          />
+          <DetailRow
+            label="Last Name"
+            value={user?.fullname.split(" ")![1] ?? ""}
+          />
           <DetailRow
             label="Phone Number"
-            value={formatNGPhone(user?.phone ?? '')}
+            value={formatNGPhone(user?.phone ?? "")}
             copyable
-            onCopy={() => copyToClipboard(formatNGPhone(user?.phone ?? ''))}
+            onCopy={() => copyToClipboard(formatNGPhone(user?.phone ?? ""))}
           />
           <DetailRow
             label="Email"
@@ -149,7 +159,7 @@ export default function ProfilePage() {
                 marginTop: 4,
               }}
             >
-              hello@arigopay.com
+              support@aririgopay.com
             </Text>
           </View>
         </View>

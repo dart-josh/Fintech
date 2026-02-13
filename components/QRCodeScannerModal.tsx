@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { CameraView, Camera } from "expo-camera";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { useTheme } from "@/theme/ThemeContext";
 
 type Props = {
   visible: boolean;
@@ -12,7 +11,6 @@ type Props = {
 };
 
 export default function QRCodeScannerModal({ visible, onClose, onScan }: Props) {
-  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [permission, setPermission] = useState<boolean | null>(null);
 
@@ -22,8 +20,6 @@ export default function QRCodeScannerModal({ visible, onClose, onScan }: Props) 
       setPermission(status === "granted");
     })();
   }, []);
-
-  console.log(permission);
 
   if (!visible) return null;
 

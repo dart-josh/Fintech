@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Linking,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -16,6 +17,11 @@ import { useUserStore } from "@/store/user.store";
 import { getInitials } from "@/hooks/format.hook";
 import { BeneficiaryModal } from "@/components/BeneficiaryModal";
 import { logout } from "@/services/auth.service";
+import * as WebBrowser from "expo-web-browser";
+
+const openWebsite = async (url: string) => {
+  await WebBrowser.openBrowserAsync(url);
+};
 
 /* ======================================================
    PROFILE SCREEN
@@ -75,19 +81,22 @@ export default function ProfileScreen() {
               icon: "users",
               route: "beneficiaries",
             },
-            { label: "Bank Statement", icon: "file-text", route: "bank-statement" },
+            {
+              label: "Bank Statement",
+              icon: "file-text",
+              route: "bank-statement",
+            },
             // { label: "Device Management", icon: "smartphone", route: "" },
             { label: "How to Use", icon: "info", route: "how-to-use-screen" },
             { label: "Contact Us", icon: "help-circle", route: "chat-page" },
-            { label: "Terms & Conditions", icon: "file", route: "" },
-            { label: "Visit Our Website", icon: "globe", route: "" },
+            { label: "Terms & Conditions", icon: "file", route: "terms" },
+            { label: "Visit Our Website", icon: "globe", route: "site" },
             { label: "Logout", icon: "log-out", danger: true, route: "logout" },
           ]}
           setModalVisible={setModalVisible}
         />
-      <View style={{paddingBottom: 60}}></View>
+        <View style={{ paddingBottom: 60 }}></View>
       </ScrollView>
-
 
       <BeneficiaryModal
         visible={modalVisible}
@@ -152,7 +161,7 @@ function ProfileSummary() {
         <View style={summaryStyles.textWrap}>
           <View>
             <Text style={[summaryStyles.accountTag, { color: colors.text }]}>
-              arigo-pay-{user?.username ?? ""}
+              {user?.fullname ?? ""}
             </Text>
             <Text style={[summaryStyles.username, { color: colors.textMuted }]}>
               @{user?.username ?? ""}
@@ -183,14 +192,14 @@ function ProfileSummary() {
       <View style={summaryStyles.tierRow}>
         <View>
           <Text style={[summaryStyles.tierText, { color: colors.text }]}>
-            You are currently on Tier 0
+            You are currently on {verificationDetails?.tier}
           </Text>
           <Text style={[summaryStyles.tierHint, { color: colors.primary }]}>
-            Upgrade your limit
+            {verificationDetails?.tier !== "Tier 4" ? "Upgrade your limit" : "You have access to all features"}
           </Text>
         </View>
 
-        <TouchableOpacity
+        {verificationDetails?.tier !== "Tier 4" && <TouchableOpacity
           onPress={() => router.push("/account-limits")}
           style={[
             summaryStyles.upgradeBtn,
@@ -200,7 +209,7 @@ function ProfileSummary() {
           <Text style={[summaryStyles.upgradeText, { color: colors.primary }]}>
             Upgrade
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
     </View>
   );
@@ -334,7 +343,11 @@ function ActionItem({
         style={itemStyles.row}
         onPress={async () => {
           if (route) {
-            if (route === "beneficiaries") {
+            if (route === "site") {
+              openWebsite("https://arigopay.com");
+            } else if (route === "terms") {
+              openWebsite("https://arigopay.com/terms-and-conditions");
+            } else if (route === "beneficiaries") {
               setModalVisible(true);
             } else if (route === "logout") {
               logout();

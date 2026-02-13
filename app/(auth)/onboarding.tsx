@@ -18,6 +18,11 @@ import { useRouter } from "expo-router";
 import { registerUser } from "@/services/auth.service";
 import { useRegisterStore } from "@/store/register.store";
 import { capitalizeFirst } from "@/hooks/format.hook";
+import * as WebBrowser from "expo-web-browser";
+
+const openWebsite = async (url: string) => {
+  await WebBrowser.openBrowserAsync(url);
+};
 
 export default function OnboardingScreen() {
   const { colors } = useTheme();
@@ -33,7 +38,11 @@ export default function OnboardingScreen() {
 
   const { email, phone, setEmailVerified, setDetails } = useRegisterStore();
 
-  const canContinue = f_name.length > 3 && l_name.length > 3 && username.length > 3 && password.length > 5;
+  const canContinue =
+    f_name.length >= 3 &&
+    l_name.length >= 3 &&
+    username.length >= 3 &&
+    password.length > 5;
 
   useEffect(() => {
     setEmailVerified(true);
@@ -169,10 +178,9 @@ export default function OnboardingScreen() {
                 />
               </View>
 
-
               {/* Username */}
               <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Username
+                {"Username (min characters: 3)"}
               </Text>
               <View
                 style={[styles.inputWrap, { backgroundColor: colors.card }]}
@@ -191,6 +199,30 @@ export default function OnboardingScreen() {
                   autoCapitalize="none"
                   onChangeText={setUsername}
                 />
+              </View>
+
+              {/* Password */}
+              <Text style={[styles.label, { color: colors.textSecondary }]}>
+                Password (min characters: 6)
+              </Text>
+              <View
+                style={[styles.inputWrap, { backgroundColor: colors.card }]}
+              >
+                <TextInput
+                  value={password}
+                  placeholder="Create a password"
+                  placeholderTextColor={colors.textSecondary}
+                  style={[styles.input, { color: colors.textPrimary }]}
+                  secureTextEntry={!showPassword}
+                  onChangeText={setPassword}
+                />
+                <Pressable onPress={() => setShowPassword(!showPassword)}>
+                  <Ionicons
+                    name={showPassword ? "eye-off" : "eye"}
+                    size={18}
+                    color={colors.textSecondary}
+                  />
+                </Pressable>
               </View>
 
               {/* Referral ID */}
@@ -215,30 +247,6 @@ export default function OnboardingScreen() {
                   onChangeText={setReferral}
                 />
               </View>
-
-              {/* Password */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Password
-              </Text>
-              <View
-                style={[styles.inputWrap, { backgroundColor: colors.card }]}
-              >
-                <TextInput
-                  value={password}
-                  placeholder="Create a password"
-                  placeholderTextColor={colors.textSecondary}
-                  style={[styles.input, { color: colors.textPrimary }]}
-                  secureTextEntry={!showPassword}
-                  onChangeText={setPassword}
-                />
-                <Pressable onPress={() => setShowPassword(!showPassword)}>
-                  <Ionicons
-                    name={showPassword ? "eye-off" : "eye"}
-                    size={18}
-                    color={colors.textSecondary}
-                  />
-                </Pressable>
-              </View>
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
@@ -261,7 +269,11 @@ export default function OnboardingScreen() {
           <Text style={{ color: colors.textSecondary }}>
             By clicking Continue, you agree to our{" "}
           </Text>
-          <Pressable onPress={() => {}}>
+          <Pressable
+            onPress={() => {
+              openWebsite("https://arigopay.com/terms-and-conditions");
+            }}
+          >
             <Text style={[styles.termsText, { color: colors.accent }]}>
               Privacy Policy and Terms
             </Text>

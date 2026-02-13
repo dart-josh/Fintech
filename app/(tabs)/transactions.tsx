@@ -73,10 +73,13 @@ export default function TransactionsPage() {
               fontWeight: "700",
               fontSize: 16,
               textDecorationLine: isFailed ? "line-through" : "none",
-              opacity: isFailed ? 0.6 : 1
+              opacity: isFailed ? 0.6 : 1,
             }}
           >
-            ₦{item.amount.toLocaleString()}
+            ₦
+            {Number(item.amount).toLocaleString("en-US", {
+              maximumFractionDigits: 2,
+            })}
           </Text>
         </View>
 

@@ -53,7 +53,7 @@ export default function BankStatementPage() {
         filterType: tx.type,
       }));
 
-      const final = mapped.filter((t : any) => t.status !== 'failed');
+      const final = mapped.filter((t: any) => t.status !== "failed");
 
       setTransactions(final);
     } catch (err) {
@@ -114,7 +114,10 @@ export default function BankStatementPage() {
           ]}
         >
           {item.filterType === "credit" ? "+" : "-"}₦
-          {Number(item.amount).toFixed(2)}
+          {Number(item.amount).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </Text>
       </View>
     );
@@ -287,11 +290,16 @@ export default function BankStatementPage() {
           Total Balance
         </Text>
         <Text style={[styles.balanceAmount, { color: colors.textPrimary }]}>
-          ₦{totalBalance.toFixed(2)}
+          ₦
+          {Number(totalBalance).toLocaleString("en-US", {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </Text>
       </View>
 
       {/* Date Range */}
+      <Text style={{textAlign: 'center', marginBottom: 2, color: colors.textSecondary}}>Select Date Range:</Text>
       <View style={styles.dateRangeContainer}>
         <TouchableOpacity
           style={[styles.dateButton, { borderColor: colors.border }]}
@@ -402,6 +410,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
+    paddingTop: 10,
     paddingBottom: 12,
     borderBottomWidth: 1,
     zIndex: 10,
@@ -410,7 +419,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: "600" },
   headerSubtitle: { fontSize: 12, marginTop: 2 },
 
-  balanceContainer: { padding: 16, alignItems: "center", marginBottom: 12 },
+  balanceContainer: { padding: 16, alignItems: "center", marginBottom: 8 },
   balanceLabel: { fontSize: 14 },
   balanceAmount: { fontSize: 24, fontWeight: "700" },
 

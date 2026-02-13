@@ -104,7 +104,7 @@ export default function SignupScreen() {
                 Welcome to,
               </Text>
               <Text style={[styles.welcomeName, { color: colors.textPrimary }]}>
-                Arigo Pay Champ!
+                Arigo Pay
               </Text>
             </View>
 

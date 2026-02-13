@@ -95,10 +95,10 @@ export default function LoginScreen() {
               <Text
                 style={[styles.welcomeLabel, { color: colors.textSecondary }]}
               >
-                Welcome back,
+                Welcome,
               </Text>
               <Text style={[styles.welcomeName, { color: colors.textPrimary }]}>
-                Chief.
+                Login to get started
               </Text>
             </View>
 

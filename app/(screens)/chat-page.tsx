@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Pressable,
   ToastAndroid,
+  Keyboard,
+  LayoutAnimation,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -180,8 +182,34 @@ export default function ChatPage() {
       },
     ]);
 
+  const [layoutResetKey, setLayoutResetKey] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+
+    const hideListener = Keyboard.addListener("keyboardDidHide", () => {
+      // Smoothly reset layout
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+      // Force re-render / recalculation
+      setLayoutResetKey((prev) => prev + 1);
+
+      // Optional: scroll FlatList to bottom
+      // flatListRef.current?.scrollToEnd({ animated: true });
+    });
+
+    return () => {
+      hideListener.remove();
+    };
+  }, []);
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <KeyboardAvoidingView
+      key={layoutResetKey}
+      style={{ flex: 1, backgroundColor: colors.background }}
+      behavior={Platform.OS === "ios" ? "padding" : "padding"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+    >
       {/* Top Bar */}
       <View
         style={[
@@ -250,34 +278,29 @@ export default function ChatPage() {
       )}
 
       {/* Input */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        keyboardVerticalOffset={insets.bottom || 8}
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: isDark ? "#1E1E1E" : "#fff",
+            borderTopColor: colors.border,
+            paddingBottom: insets.bottom || 8,
+          },
+        ]}
       >
-        <View
-          style={[
-            styles.inputContainer,
-            {
-              backgroundColor: isDark ? "#1E1E1E" : "#fff",
-              borderTopColor: colors.border,
-              paddingBottom: insets.bottom || 8,
-            },
-          ]}
-        >
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            placeholder="Type your message..."
-            placeholderTextColor={colors.textSecondary}
-            style={[styles.input, { color: colors.textPrimary }]}
-            multiline
-          />
-          <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-            <Ionicons name="send" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
-    </View>
+        <TextInput
+          value={input}
+          onChangeText={setInput}
+          placeholder="Type your message..."
+          placeholderTextColor={colors.textSecondary}
+          style={[styles.input, { color: colors.textPrimary }]}
+          multiline
+        />
+        <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
+          <Ionicons name="send" size={24} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 

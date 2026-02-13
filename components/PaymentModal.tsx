@@ -5,6 +5,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -15,8 +16,7 @@ type PaymentModalProps = {
   onClose: () => void;
   type: "airtime" | "data";
   amount: number;
-  networkName: string;
-  networkLogo?: React.ReactNode;
+  networkLogo?: any;
   recipient: string;
   dataBundle?: string;
   userBalance: string;
@@ -28,7 +28,6 @@ export default function PaymentModal({
   onClose,
   type,
   amount,
-  networkName,
   networkLogo,
   recipient,
   dataBundle,
@@ -60,15 +59,7 @@ export default function PaymentModal({
             <InfoRow
               label="Product"
               value={type === "airtime" ? "Airtime" : "Data"}
-              icon={
-                networkLogo ?? (
-                  <View style={styles.networkLogo}>
-                    <Text style={{ fontSize: 12 }}>
-                      {networkName[0]}
-                    </Text>
-                  </View>
-                )
-              }
+              logo={networkLogo}
               colors={colors}
             />
 
@@ -80,11 +71,7 @@ export default function PaymentModal({
             />
 
             {type === "data" && dataBundle && (
-              <InfoRow
-                label="Data Bundle"
-                value={dataBundle}
-                colors={colors}
-              />
+              <InfoRow label="Data Bundle" value={dataBundle} colors={colors} />
             )}
 
             <InfoRow
@@ -169,26 +156,31 @@ export default function PaymentModal({
 const InfoRow = ({
   label,
   value,
-  icon,
+  logo,
   colors,
   isNumber = false,
 }: {
   label: string;
   value: string | number;
-  icon?: React.ReactNode;
+  logo?: any;
   colors: any;
   isNumber?: boolean;
 }) => {
-  const displayValue = isNumber
-    ? formatNumberSpace(value)
-    : value;
+  const displayValue = isNumber ? formatNumberSpace(value) : value;
 
   return (
     <View style={styles.infoRow}>
       <Text style={{ color: colors.muted }}>{label}</Text>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-        {icon}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        {logo && <View style={styles.networkLogo}>
+          <Image
+            source={logo}
+            style={styles.networkLogo}
+            resizeMode="contain"
+          />
+        </View>}
+
         <Text style={{ color: colors.text, fontWeight: "500" }}>
           {displayValue}
         </Text>

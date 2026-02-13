@@ -7,6 +7,7 @@ import Toast from "@/components/Toast";
 import { useEffect } from "react";
 import * as Notifications from "expo-notifications";
 import { useToastStore } from "@/store/toast.store";
+import ConfirmModal from "@/components/ConfirmModal";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function RootLayout() {
         const content = notification.request.content;
         toast.show({
           type: "success",
-          message: content.title ?? '',
+          message: content.title ?? "",
         });
       },
     );
@@ -55,7 +56,7 @@ export default function RootLayout() {
       receivedSub.remove();
       responseSub.remove();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -70,6 +71,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" />
           </Stack>
         </UIProvider>
+        <ConfirmModal />
         <Toast />
         {/* </SafeAreaView> */}
       </SafeAreaProvider>

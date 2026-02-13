@@ -91,7 +91,6 @@ export default function WithdrawalStatusPage() {
         const res = await getWithdrawalStatus({ reference: receipt.reference });
 
         if (res) {
-          console.log('Success -- ', res)
           setStatus(res);
 
           // Stop polling once resolved

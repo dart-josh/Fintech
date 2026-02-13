@@ -9,10 +9,14 @@ import {
 } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
-import { pinLogin } from "@/services/auth.service";
+import { pinLogin, validateSessionToken } from "@/services/auth.service";
 import { useRegisterStore } from "@/store/register.store";
 import { useUserStore } from "@/store/user.store";
 import { getInitials } from "@/hooks/format.hook";
+import { useUIStore } from "@/store/ui.store";
+import { getBiometricToken } from "@/services/secureStore.service";
+import { authenticateBiometric } from "@/services/biometric.service";
+import { getDeviceId } from "@/services/device.service";
 
 const PIN_LENGTH = 6;
 
@@ -29,10 +33,10 @@ export default function EnterPinScreen() {
   useEffect(() => {
     const handleSubmit = async () => {
       const toast = useToastStore.getState();
-      const {userId} = useRegisterStore.getState();
-      
+      const { userId } = useRegisterStore.getState();
+
       try {
-        const success = await pinLogin({userId, pin});
+        const success = await pinLogin({ userId, pin });
         if (success) {
           router.replace("/home");
         } else {
@@ -54,7 +58,28 @@ export default function EnterPinScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isComplete]);
 
-  const {user} = useUserStore();
+  const { user } = useUserStore();
+  const { useBiometrics } = useUIStore();
+
+  useEffect(() => {
+    const tryBiometricLogin = async () => {
+      const token = await getBiometricToken();
+      if (!token) return;
+
+      const auth = await authenticateBiometric();
+      if (!auth.success) return;
+
+      const deviceId = await getDeviceId();
+
+      const tokenValid = await validateSessionToken({ token, deviceId });
+      if (!tokenValid) return;
+
+      // login
+      router.replace("/home");
+    };
+
+    if (useBiometrics) tryBiometricLogin();
+  }, [useBiometrics]);
 
   return (
     <SafeAreaProvider>

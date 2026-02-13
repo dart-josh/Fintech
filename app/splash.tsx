@@ -7,6 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { useRegisterStore } from "@/store/register.store";
 import { fetchUser } from "@/services/user.service";
+import { useUIStore } from "@/store/ui.store";
 
 export default function SplashScreen() {
   const { colors } = useTheme();
@@ -34,7 +35,7 @@ export default function SplashScreen() {
     };
 
     const checkPin = async (userId: string) => {
-      setAltRoute('');
+      setAltRoute("");
       const user = await fetchUser(userId ?? "");
 
       if (!user) {
@@ -43,6 +44,7 @@ export default function SplashScreen() {
         if (!user.login_pin) {
           setAltRoute("/create-pin");
         } else {
+          // check biometric
           setAltRoute("/enter-pin");
         }
       }
@@ -50,6 +52,22 @@ export default function SplashScreen() {
 
     getUser();
   }, []);
+
+  const {toggleShowBalance, toggleUseBiometrics} = useUIStore();
+  useEffect(() => {
+    const getAppPreference = async () => {
+      const value = await SecureStore.getItemAsync("showBalance");
+      const showBalance = value === "false";
+      toggleShowBalance(!showBalance);
+
+      const value_2 = await SecureStore.getItemAsync("useBiometrics");
+      
+      const useBiometrics = value_2 === "true";
+      toggleUseBiometrics(useBiometrics);
+    };
+
+    getAppPreference();
+  }, [toggleShowBalance, toggleUseBiometrics]);
 
   if (loading) {
     return (

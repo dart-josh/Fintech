@@ -6,13 +6,15 @@ import { mapUser, User, useUserStore } from "@/store/user.store";
 import * as SecureStore from "expo-secure-store";
 import { fetchUser } from "./user.service";
 import { useWalletStore } from "@/store/wallet.store";
+import { getDeviceId } from "./device.service";
+import { clearBiometricToken, saveBiometricToken } from "./secureStore.service";
 
 const toast = useToastStore.getState();
 
 export async function login(data: {
   identifier: string;
   password: string;
-  mode: 'email' | 'phone'
+  mode: "email" | "phone";
 }): Promise<User | null> {
   const { showLoading, hideLoading } = useUIStore.getState();
 
@@ -284,15 +286,73 @@ export async function logout(): Promise<boolean> {
     logout();
     clearWallet();
 
+    const device_id = await getDeviceId();
+
     await authApi.logoutDevice({
       userId: user?.id ?? "",
       token: deviceToken ?? "",
+      device_id,
     });
 
     await SecureStore.deleteItemAsync("userId");
     await SecureStore.deleteItemAsync("showBalance");
+    await SecureStore.deleteItemAsync("useBiometrics");
+    clearBiometricToken();
     return true;
   } catch (error) {
     return false;
+  }
+}
+
+export async function saveBiometricTokenToDB(data: {
+  userId: string;
+  deviceId: string;
+}): Promise<string | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  try {
+    showLoading("Saving Biometric");
+
+    const res: any = await authApi.saveBiometricToken(data);
+
+    if (!res.status) return null;
+
+    return res.session_token;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
+export async function validateSessionToken(data: {
+  token: string;
+  deviceId: string;
+}): Promise<boolean> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  try {
+    showLoading("Validating Biometric");
+
+    const res: any = await authApi.validateSessionToken(data);
+
+    if (!res.status) return false;
+    if (!res.newToken) return false;
+
+    await saveBiometricToken(res.newToken);
+
+    return true;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return false;
+  } finally {
+    hideLoading();
   }
 }

@@ -14,6 +14,7 @@ import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/theme/ThemeContext";
 import { useUserStore } from "@/store/user.store";
 import { AccountDetails, getDedicatedAccount } from "@/services/wallet.service";
+import QRCode from "react-native-qrcode-svg";
 
 type Props = {
   visible: boolean;
@@ -21,7 +22,7 @@ type Props = {
 };
 
 export const DedicatedAccountModal = ({ visible, onClose }: Props) => {
-  const { theme } = useTheme();
+  const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
   const [accountDetails, setAccountDetails] = useState<AccountDetails | null>(
@@ -67,69 +68,131 @@ export const DedicatedAccountModal = ({ visible, onClose }: Props) => {
                 getAccountDetails={getAccountDetails}
               />
             )) || (
-              <TouchableOpacity activeOpacity={0.9} onPress={handleCopy}>
-                <LinearGradient
-                  colors={
-                    isDark ? ["#1F2937", "#111827"] : ["#EEF2FF", "#FFFFFF"]
-                  }
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.card}
-                >
-                  {/* Header */}
-                  <View style={styles.header}>
-                    <Text
-                      style={[
-                        styles.bank,
-                        { color: isDark ? "#E5E7EB" : "#1F2937" },
-                      ]}
-                    >
-                      {accountDetails?.bank_name}
-                    </Text>
-
-                    <View style={styles.copyBadge}>
-                      <Feather
-                        name="copy"
-                        size={14}
-                        color={isDark ? "#9CA3AF" : "#4F46E5"}
-                      />
-                    </View>
-                  </View>
-
-                  {/* Account Number */}
-                  <Text
-                    style={[
-                      styles.accountNumber,
-                      { color: isDark ? "#FFFFFF" : "#111827" },
-                    ]}
-                  >
-                    {accountDetails?.account_number}
-                  </Text>
-
-                  {/* Account Name */}
-                  <Text
-                    style={[
-                      styles.accountName,
-                      { color: isDark ? "#9CA3AF" : "#6B7280" },
-                    ]}
-                  >
-                    {accountDetails?.account_name}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.tapHint,
-                      { color: isDark ? "#6B7280" : "#9CA3AF" },
-                    ]}
-                  >
-                    Tap card to copy
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
+              <>
+                <QRCodeCard
+                  isDark={isDark}
+                  colors={colors}
+                  accountDetails={accountDetails}
+                  handleCopy={handleCopy}
+                />
+              </>
             )}
         </Pressable>
       </Pressable>
     </Modal>
+  );
+};
+
+const QRCodeCard = ({ isDark, colors, accountDetails, handleCopy }: any) => {
+  return (
+    <TouchableOpacity activeOpacity={0.9} onPress={handleCopy}>
+      <LinearGradient
+        colors={isDark ? ["#1F2937", "#111827"] : ["#EEF2FF", "#FFFFFF"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.card}
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View>
+            <Text
+              style={[
+                styles.accountHint,
+                {
+                  color: isDark ? colors.textMuted : "#94A3B8",
+                  marginBottom: 3,
+                },
+              ]}
+            >
+              Personal Bank
+            </Text>
+
+            <Text
+              style={[styles.bank, { color: isDark ? "#E5E7EB" : "#1F2937" }]}
+            >
+              {accountDetails?.bank_name}
+            </Text>
+          </View>
+
+          <View style={styles.copyBadge}>
+            <Feather
+              name="copy"
+              size={14}
+              color={isDark ? "#9CA3AF" : "#4F46E5"}
+            />
+          </View>
+        </View>
+
+        {/* CArd */}
+        <View
+          style={[
+            styles.qrCard,
+            {
+              backgroundColor: isDark ? colors.card : "#FFFFFF",
+              borderColor: isDark ? "#1F2937" : "#E2E8F0",
+            },
+          ]}
+        >
+          {/* QR Wrapper */}
+          <View
+            style={[
+              styles.qrWrapper,
+              {
+                backgroundColor: isDark ? "#020617" : "#F8FAFC",
+                borderColor: isDark ? "#4B5563" : "#CBD5E1",
+              },
+            ]}
+          >
+            <QRCode
+              value={accountDetails.account_number}
+              size={180}
+              color={isDark ? "#F8FAFC" : "#020617"}
+              backgroundColor={isDark ? "#020617" : "#F8FAFC"}
+            />
+          </View>
+
+          {/* Account Info */}
+          <View style={styles.accountInfo}>
+            <Text
+              style={[
+                styles.accountLabel,
+                { color: isDark ? colors.textMuted : "#64748B" },
+              ]}
+            >
+              Account Number
+            </Text>
+
+            <Text
+              style={[
+                styles.accountNumber,
+                { color: isDark ? colors.text : "#020617" },
+              ]}
+            >
+              {accountDetails?.account_number}
+            </Text>
+
+            {/* Account Name */}
+            <Text
+              style={[
+                styles.accountName,
+                { color: isDark ? "#9CA3AF" : "#6B7280" },
+              ]}
+            >
+              {accountDetails?.account_name}
+            </Text>
+
+            <Text
+              style={[
+                styles.tapHint,
+                { color: isDark ? "#6B7280" : "#9CA3AF" },
+              ]}
+            >
+              Scan QR or tap card to copy account number to receive money
+            </Text>
+          </View>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
   );
 };
 
@@ -265,7 +328,7 @@ const styles = StyleSheet.create({
 
   accountName: {
     marginTop: 6,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "500",
   },
 
@@ -273,5 +336,49 @@ const styles = StyleSheet.create({
     marginTop: 14,
     fontSize: 12,
     textAlign: "center",
+  },
+
+  qrCard: {
+    borderRadius: 24,
+    paddingTop: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    borderWidth: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+
+  qrWrapper: {
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  accountInfo: {
+    marginTop: 18,
+    alignItems: "center",
+  },
+
+  accountLabel: {
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 4,
+  },
+
+  // accountNumber: {
+  //   fontSize: 20,
+  //   fontWeight: "700",
+  //   letterSpacing: 1.2,
+  //   marginBottom: 6,
+  // },
+
+  accountHint: {
+    fontSize: 12,
+    maxWidth: 220,
   },
 });

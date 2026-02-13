@@ -22,6 +22,9 @@ export const walletApi = {
     network: string;
   }) => client.post("/api/wallet/data_purchase", data),
 
+  lookUpNumber: (data: { phone: string }) =>
+    client.post("/api/wallet/lookup_number", data),
+
   withdraw: (data: {
     userId: string;
     amount: number;
@@ -31,15 +34,17 @@ export const walletApi = {
     account_name: string;
   }) => client.post("/api/wallet/withdraw", data),
 
-  getWithdrawalStatus: (data: {
-    reference: string;
-  }) => client.post("/api/wallet/get_withdrawal_status", data),
+  getWithdrawalStatus: (data: { reference: string }) =>
+    client.post("/api/wallet/get_withdrawal_status", data),
 
   getWalletDetails: (data: { userId: string }) =>
     client.post("/api/wallet/get", data),
 
-   getStatement: (data: { userId: string, startDate: string, endDate: string }) =>
-    client.post("/api/wallet/statement", data),
+  getStatement: (data: {
+    userId: string;
+    startDate: string;
+    endDate: string;
+  }) => client.post("/api/wallet/statement", data),
 
   getUserByPaymentCode: (data: { payment_code: string }) =>
     client.post("/api/beneficiary/find", data),
@@ -55,5 +60,4 @@ export const walletApi = {
 
   getDedicatedAccount: (data: { userId: string }) =>
     client.post("/api/wallet/get_account", data),
-
 };

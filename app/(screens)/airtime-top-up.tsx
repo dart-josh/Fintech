@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   Vibration,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -22,7 +23,7 @@ import { verifyTxPin } from "@/services/auth.service";
 import { fetchUser } from "@/services/user.service";
 import { useUserStore } from "@/store/user.store";
 import { useToastStore } from "@/store/toast.store";
-import { purchaseAirtime } from "@/services/wallet.service";
+import { lookUpNumber, purchaseAirtime } from "@/services/wallet.service";
 import { useWalletStore } from "@/store/wallet.store";
 
 export default function AirtimeTopUp() {
@@ -46,14 +47,24 @@ export default function AirtimeTopUp() {
   const [pinError, setPinError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  
-
   const { wallet } = useWalletStore();
   const userBalance = wallet?.balance ?? "";
 
   const toast = useToastStore.getState();
 
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const getNetwork = async () => {
+      const _network = await lookUpNumber({ phone: number });
+      if (_network) {
+        const net = NETWORKS.find((n) => n.key === _network);
+        if (net) setNetwork(net);
+      }
+    };
+
+    if (number.length === 11) getNetwork();
+  }, [number]);
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -151,10 +162,14 @@ export default function AirtimeTopUp() {
 
         <Text style={[styles.title, { color: colors.text }]}>Airtime</Text>
 
-        <TouchableOpacity onPress={() => router.push({
-          pathname: "/history",
-          params: {type: 'airtime'}
-        })}>
+        <TouchableOpacity
+          onPress={() =>
+            router.push({
+              pathname: "/history",
+              params: { type: "airtime" },
+            })
+          }
+        >
           <Text style={[styles.history, { color: colors.primary }]}>
             History
           </Text>
@@ -192,7 +207,11 @@ export default function AirtimeTopUp() {
             onPress={() => setNetworkModal(true)}
           >
             <View style={styles.networkLogo}>
-              <Text style={{ fontWeight: "700" }}>{network.name[0]}</Text>
+              <Image
+                source={network.image}
+                style={styles.networkLogo}
+                resizeMode="contain"
+              />
             </View>
             <Feather name="chevron-down" size={18} color={colors.text} />
           </TouchableOpacity>
@@ -248,7 +267,7 @@ export default function AirtimeTopUp() {
         onClose={() => setPayModal(false)}
         type="airtime"
         amount={Number(amount)}
-        networkName={network.name}
+        networkLogo={network.image}
         recipient={number}
         userBalance={userBalance}
         onPay={handleConfirmPayment}

@@ -2,7 +2,12 @@ import { userApi } from "@/api/user.api";
 import { useRegisterStore } from "@/store/register.store";
 import { useToastStore } from "@/store/toast.store";
 import { useUIStore } from "@/store/ui.store";
-import { mapUser, User, UserVerification, useUserStore } from "@/store/user.store";
+import {
+  mapUser,
+  User,
+  UserVerification,
+  useUserStore,
+} from "@/store/user.store";
 import { getWalletDetails, listBeneficiaries } from "./wallet.service";
 
 const toast = useToastStore.getState();
@@ -15,7 +20,7 @@ export async function fetchUser(userId: string): Promise<User | null> {
     const { setUser, setDevices, setNotification } = useUserStore.getState();
     const { setUserId } = useRegisterStore.getState();
     showLoading("");
-    const res : any = await userApi.fetchUser({ userId });
+    const res: any = await userApi.fetchUser({ userId });
 
     if (!res.user) return null;
     getWalletDetails({ userId });
@@ -131,7 +136,7 @@ export async function getUserVerifications(data: {
   const { setVerificationDetails } = useUserStore.getState();
 
   try {
-    const res : any = await userApi.getUserVerifications(data);
+    const res: any = await userApi.getUserVerifications(data);
 
     if (!res.verification) return null;
 
@@ -158,7 +163,7 @@ export async function submitBvn(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error : any) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -214,7 +219,7 @@ export async function submitAddress(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error : any) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
@@ -244,12 +249,57 @@ export async function submitNok(data: {
     fetchUser(data.userId);
 
     return true;
-  } catch (error : any) {
+  } catch (error: any) {
     toast.show({
       message: error.message,
       type: "error",
     });
     return false;
+  } finally {
+    hideLoading();
+  }
+}
+
+type UserDetail = {
+  id: string;
+  full_name: string;
+  username: string;
+  payment_code: string;
+  email: string;
+  phone: string;
+};
+
+export async function fetchUserByDetails(data: {
+  userDetail: string;
+}): Promise<UserDetail | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  const mapUser = (u: any): UserDetail => {
+    return {
+      id: u.id,
+      full_name: u.full_name,
+      username: u.username,
+      payment_code: u.payment_code,
+      email: u.email,
+      phone: u.phone,
+    };
+  };
+
+  try {
+    showLoading("Fetching User");
+
+    const res: any = await userApi.fetchUserByDetails(data);
+    if (!res.status || !res.user) return null;
+
+    const user = mapUser(res.user);
+
+    return user;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return null;
   } finally {
     hideLoading();
   }

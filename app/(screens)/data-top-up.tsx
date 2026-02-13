@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -31,8 +31,9 @@ import { useWalletStore } from "@/store/wallet.store";
 import { useToastStore } from "@/store/toast.store";
 import { verifyTxPin } from "@/services/auth.service";
 import { fetchUser } from "@/services/user.service";
-import { purchaseData } from "@/services/wallet.service";
+import { lookUpNumber, purchaseData } from "@/services/wallet.service";
 import PinModal from "@/components/PinModal";
+import { Image } from "react-native";
 
 export default function DataTopUp() {
   const router = useRouter();
@@ -41,8 +42,8 @@ export default function DataTopUp() {
   const isDark = theme === "dark";
 
   const { user } = useUserStore.getState();
-  
-    const myPhone = user?.phone ? `0${user?.phone}` : "";
+
+  const myPhone = user?.phone ? `0${user?.phone}` : "";
 
   const [network, setNetwork] = useState(NETWORKS[0]);
   const [networkModal, setNetworkModal] = useState(false);
@@ -61,6 +62,18 @@ export default function DataTopUp() {
   const toast = useToastStore.getState();
 
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+      const getNetwork = async () => {
+        const _network = await lookUpNumber({ phone: number });
+        if (_network) {
+          const net = NETWORKS.find((n) => n.key === _network);
+          if (net) setNetwork(net);
+        }
+      };
+  
+      if (number.length === 11) getNetwork();
+    }, [number]);
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -204,7 +217,11 @@ export default function DataTopUp() {
             onPress={() => setNetworkModal(true)}
           >
             <View style={styles.networkLogo}>
-              <Text style={{ fontWeight: "700" }}>{network.name[0]}</Text>
+              <Image
+                source={network.image}
+                style={styles.networkLogo}
+                resizeMode="contain"
+              />
             </View>
             <Feather name="chevron-down" size={18} color={colors.text} />
           </TouchableOpacity>
@@ -261,7 +278,7 @@ export default function DataTopUp() {
         type="data"
         dataBundle={selectedPlan?.title}
         amount={Number(selectedPlan?.amount)}
-        networkName={network.name}
+        networkLogo={network.image}
         recipient={number}
         userBalance={userBalance}
         onPay={handleConfirmPayment}

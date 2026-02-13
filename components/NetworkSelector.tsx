@@ -2,6 +2,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { NETWORKS } from "@/utils/globalVariables";
 import { Feather } from "@expo/vector-icons";
 import {
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -38,7 +39,12 @@ export default function NetworkSelector({
                 }}
               >
                 <View style={styles.networkLogo}>
-                  <Text>{net.name[0]}</Text>
+                  <Image
+                    source={net.image}
+                    style={styles.networkLogo}
+                    
+                    resizeMode="contain"
+                  />
                 </View>
 
                 <Text style={{ flex: 1, color: colors.text }}>{net.name}</Text>

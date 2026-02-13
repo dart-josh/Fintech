@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { sendEmailCode } from "@/services/auth.service";
-import { useUIStore } from "@/store/ui.store";
+import { enableBiometrics, useUIStore } from "@/store/ui.store";
 
 export default function SecurityScreen() {
   const router = useRouter();
@@ -21,9 +21,8 @@ export default function SecurityScreen() {
   const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
-  const {showBalance, toggleShowBalance} = useUIStore();
-
-  const [useBiometrics, setUseBiometrics] = useState(false);
+  const { showBalance, toggleShowBalance, useBiometrics, toggleUseBiometrics } =
+    useUIStore();
 
   const { user } = useUserStore();
 
@@ -48,12 +47,12 @@ export default function SecurityScreen() {
       route: "/change-pin",
       mode: "transaction",
     },
-    // {
-    //   label: "Use Face ID / Fingerprint",
-    //   icon: "smartphone",
-    //   route: "",
-    //   switch: true,
-    // },
+    {
+      label: "Use Face ID / Fingerprint",
+      icon: "smartphone",
+      route: "",
+      switch: true,
+    },
     { label: "Show Balance", icon: "eye", route: "", switch: true },
   ];
 
@@ -158,11 +157,13 @@ export default function SecurityScreen() {
                         ? useBiometrics
                         : showBalance
                     }
-                    onValueChange={(val) =>
-                      item.label === "Use Face ID / Fingerprint"
-                        ? setUseBiometrics(val)
-                        : toggleShowBalance(val)
-                    }
+                    onValueChange={async (val) => {
+                      if (item.label === "Use Face ID / Fingerprint") {
+                        toggleUseBiometrics(val);
+                        const bio = await enableBiometrics(val);
+                        toggleUseBiometrics(bio);
+                      } else toggleShowBalance(val);
+                    }}
                     trackColor={{
                       true: colors.primary,
                       false: isDark ? "#555" : "#ccc",

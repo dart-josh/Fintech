@@ -39,7 +39,13 @@ export const authApi = {
   resetPassword: (data: { email: string }) =>
     client.post("/api/auth/send_reset_code", data),
 
-  logoutDevice: (data: { userId: string, token: string }) =>
+  logoutDevice: (data: { userId: string, token: string, device_id: string }) =>
     client.post("/api/auth/logout", data),
+
+  saveBiometricToken: (data: { userId: string, deviceId: string }) =>
+    client.post("/api/auth/saveBiometricToken", data),
+
+  validateSessionToken: (data: { token: string, deviceId: string }) =>
+    client.post("/api/auth/validateSessionToken", data),
 
 };

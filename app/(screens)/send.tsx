@@ -105,7 +105,7 @@ export default function SendPage() {
       setPinVisible(false);
       fetchUser(user?.id ?? "");
 
-      router.back();
+      if (res) router.back();
       router.push({
         pathname: "/payment-status",
         params:

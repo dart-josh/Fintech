@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   RefreshControl,
-  Alert,
 } from "react-native";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -14,19 +13,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
 import { LinearGradient } from "expo-linear-gradient";
-import { transactions } from "@/utils/globalVariables";
 import { fetchUser } from "@/services/user.service";
 import { useRegisterStore } from "@/store/register.store";
 import { useUserStore } from "@/store/user.store";
 import * as Clipboard from "expo-clipboard";
 import { useWalletStore } from "@/store/wallet.store";
-import { capitalizeFirst, formatToMonthDay } from "@/hooks/format.hook";
-import NoTransaction from "@/components/NoTransaction";
+import { capitalizeFirst } from "@/hooks/format.hook";
 import { useUIStore } from "@/store/ui.store";
 import { registerForPushNotifications } from "@/services/notification.service";
 import * as SecureStore from "expo-secure-store";
 import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
 import { sendEmailCode } from "@/services/auth.service";
+import SpendingInsights from "@/components/SpendingInsights";
 
 // MAIN DASHBOARD SCREEN
 
@@ -133,12 +131,12 @@ const DashboardScreen = () => {
 
         <EventBox
           title="ArigoPay Launch Event"
-          subtitle="Feb 10, 2026 | 10:00 AM"
+          subtitle="Mar 01, 2026 | 10:00 AM"
         />
 
         <RecentTransactions isDark={isDark} />
 
-        <SpendingInsights isDark={isDark} transactions={transactions} />
+        <SpendingInsights isDark={isDark} />
       </ScrollView>
 
       <DedicatedAccountModal
@@ -292,6 +290,7 @@ const toast = useToastStore.getState();
 // 2. WALLET INFO
 const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
   const router = useRouter();
+  const { colors } = useTheme();
   const { user, verificationDetails } = useUserStore();
   const { wallet } = useWalletStore();
   const emailVerified = user?.emailVerified ?? false;
@@ -413,6 +412,15 @@ const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
             />
           </TouchableOpacity>
         </View>
+
+        {/* <View
+          style={[WalletStyles.tagContainer, { backgroundColor: colors.card }]}
+        >
+          <Ionicons name="wallet-outline" size={14} color={colors.primary} />
+          <Text style={[WalletStyles.tagText, { color: colors.textSecondary }]}>
+            wallet-wallet transfers
+          </Text>
+        </View> */}
       </View>
 
       {!emailVerified ? (
@@ -458,6 +466,20 @@ const WalletStyles = StyleSheet.create({
     backgroundColor: "#6f91da1e",
   },
   buttonText: { color: "#855ae1", fontWeight: "bold", fontSize: 12 },
+  tagContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    marginTop: 8,
+    borderRadius: 12,
+    gap: 4,
+  },
+  tagText: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
 });
 
 const VerificationBox = ({ isDark }: any) => {
@@ -590,7 +612,7 @@ const QuickActions = ({ isDark, setModalVisible }: any) => {
     },
     {
       label: "Withdraw",
-      icon: <Feather name="credit-card" size={24} color="#FF6B6B" />,
+      icon: <Feather name="arrow-up-right" size={24} color="#FF6B6B" />,
       color: "#FF6B6B",
       route: "withdraw",
     },
@@ -772,7 +794,10 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
                 },
               ]}
             >
-              {isCredit ? "+" : "-"}₦{tx.amount.toLocaleString()}
+              {isCredit ? "+" : "-"}₦
+              {Number(tx.amount).toLocaleString("en-US", {
+                maximumFractionDigits: 2,
+              })}
             </Text>
           </View>
         );
@@ -816,162 +841,6 @@ const TransactionStyles = StyleSheet.create({
   amount: {
     fontSize: 14,
     fontWeight: "700",
-  },
-});
-
-// 5. SPENDING INSIGHTS
-type Transaction = {
-  id: string;
-  amount: number;
-  date: string;
-  isCredit: boolean;
-};
-
-type Props = {
-  isDark: boolean;
-  transactions: Transaction[];
-};
-
-function SpendingInsights({ isDark, transactions }: Props) {
-  const { wallet } = useWalletStore();
-  // Take last 7 transactions (or fewer)
-  const data = wallet?.transactions.slice(0, 7).reverse() ?? [];
-
-  const maxAmount = Math.max(...data.map((t) => Number(t.amount)));
-
-  return (
-    <View
-      style={[
-        InsightsStyles.container,
-        { backgroundColor: isDark ? "#1E1E1E" : "#FFFFFF" },
-      ]}
-    >
-      <Text
-        style={[
-          InsightsStyles.title,
-          { color: isDark ? "#FFF" : "#000", marginBottom: 30 },
-        ]}
-      >
-        Spending Insights
-      </Text>
-
-      {/* Chart */}
-      {!data || (data.length === 0 && <NoTransaction />) || (
-        <View style={InsightsStyles.chart}>
-          {data.map((item) => {
-            const heightPercent = (Number(item.amount) / maxAmount) * 100;
-            const isFailed = item.status === "failed";
-
-            return (
-              <View
-                key={`${item.id}-${item.description}`}
-                style={InsightsStyles.barWrapper}
-              >
-                <View
-                  style={[
-                    InsightsStyles.bar,
-                    {
-                      height: `${heightPercent}%`,
-                      backgroundColor: isFailed
-                        ? "#9CA3AF"
-                        : item.type === "Payment Received" ||
-                            item.type === "Top-up"
-                          ? "#22C55E" // credit
-                          : "#EF4444", // debit
-                      opacity: isFailed ? 0.7 : 1,
-                    },
-                  ]}
-                />
-                <Text
-                  style={[
-                    InsightsStyles.date,
-                    { color: isDark ? "#AAA" : "#666" },
-                  ]}
-                >
-                  {formatToMonthDay(item.date)}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
-      {/* Legend */}
-      <View style={InsightsStyles.legend}>
-        <LegendItem color="#22C55E" label="Credit" />
-        <LegendItem color="#EF4444" label="Debit" />
-      </View>
-    </View>
-  );
-}
-
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <View style={InsightsStyles.legendItem}>
-      <View style={[InsightsStyles.legendDot, { backgroundColor: color }]} />
-      <Text style={InsightsStyles.legendText}>{label}</Text>
-    </View>
-  );
-}
-
-const InsightsStyles = StyleSheet.create({
-  container: {
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 30,
-  },
-
-  title: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 16,
-  },
-
-  chart: {
-    height: 160,
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    paddingHorizontal: 6,
-  },
-
-  barWrapper: {
-    flex: 1,
-    alignItems: "center",
-    marginHorizontal: 4,
-  },
-
-  bar: {
-    width: 14,
-    borderRadius: 8,
-  },
-
-  date: {
-    fontSize: 10,
-    marginTop: 6,
-  },
-
-  legend: {
-    flexDirection: "row",
-    marginTop: 12,
-  },
-
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-  },
-
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-
-  legendText: {
-    fontSize: 12,
-    color: "#888",
   },
 });
 

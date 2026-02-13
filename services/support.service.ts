@@ -24,7 +24,6 @@ export async function getMessages(data: {
     return res.messages;
     // return true;
   } catch (error) {
-    console.log(error)
     return [];
   }
 }

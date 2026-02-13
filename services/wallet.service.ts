@@ -131,6 +131,26 @@ export async function purchaseData(data: {
   }
 }
 
+export async function lookUpNumber(data: {
+  phone: string;
+}): Promise<string | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+
+  try {
+    showLoading();
+
+    const res: any = await walletApi.lookUpNumber(data);
+
+    if (!res.status) return null;
+
+    return res.network ?? null;
+  } catch (error: any) {
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
 export async function withdraw(data: {
   userId: string;
   amount: number;
@@ -151,7 +171,7 @@ export async function withdraw(data: {
 
     return res.receipt ?? null;
   } catch (error: any) {
-    console.log(error);
+    // console.log(error);
     toast.show({
       message: error.message,
       type: "error",
@@ -172,7 +192,6 @@ export async function getWithdrawalStatus(data: {
 
     return res.status;
   } catch (error: any) {
-    console.log("get Status: ", error);
     return null;
   }
 }
