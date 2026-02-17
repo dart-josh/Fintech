@@ -123,7 +123,7 @@ export default function ProfilePage() {
             label="Phone Number"
             value={formatNGPhone(user?.phone ?? "")}
             copyable
-            onCopy={() => copyToClipboard(formatNGPhone(user?.phone ?? ""))}
+            onCopy={() => copyToClipboard(user?.phone ?? "")}
           />
           <DetailRow
             label="Email"

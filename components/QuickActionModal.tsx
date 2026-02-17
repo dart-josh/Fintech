@@ -98,6 +98,7 @@ export default function QuickActionModal({
               key={item.label}
               style={modalStyles.item}
               onPress={() => {
+                onClose();
                 const toast = useToastStore.getState();
                 const {user} = useUserStore.getState();
                 const route = item.route;
@@ -114,20 +115,7 @@ export default function QuickActionModal({
                         type: "warning",
                         message: "Transaction PIN Not set",
                       });
-                      router.push("/security");
-                      sendEmailCode(user?.email ?? "");
-                      router.push({
-                        pathname: "/verify-otp",
-                        params: {
-                          flow: "change-pin",
-                          target: user?.email ?? "",
-                          mode: "transaction",
-                        },
-                      });
-                      // Alert.alert(
-                      //   "Set Transaction PIN",
-                      //   `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
-                      // );
+                      router.push("/set-pin-intro");
                       return;
                     }
                   }

@@ -387,16 +387,7 @@ const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
                   type: "warning",
                   message: "Transaction PIN Not set",
                 });
-                router.push("/security");
-                sendEmailCode(user?.email ?? "");
-                router.push({
-                  pathname: "/verify-otp",
-                  params: {
-                    flow: "change-pin",
-                    target: user?.email ?? "",
-                    mode: "transaction",
-                  },
-                });
+                router.push("/set-pin-intro");
                 return;
               }
 
@@ -641,20 +632,7 @@ const QuickActions = ({ isDark, setModalVisible }: any) => {
                       type: "warning",
                       message: "Transaction PIN Not set",
                     });
-                    router.push("/security");
-                    sendEmailCode(user?.email ?? "");
-                    router.push({
-                      pathname: "/verify-otp",
-                      params: {
-                        flow: "change-pin",
-                        target: user?.email ?? "",
-                        mode: "transaction",
-                      },
-                    });
-                    // Alert.alert(
-                    //   "Set Transaction PIN",
-                    //   `To set transaction PIN\nGo to Profile -> Security -> Set Transaction PIN`,
-                    // );
+                    router.push("/set-pin-intro");
                     return;
                   }
                 }

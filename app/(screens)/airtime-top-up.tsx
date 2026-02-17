@@ -72,6 +72,7 @@ export default function AirtimeTopUp() {
       setPinVisible(true);
     } else {
       toast.show({ type: "warning", message: "Transaction PIN Not set" });
+      router.push("/set-pin-intro");
     }
   };
 

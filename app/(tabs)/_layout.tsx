@@ -130,7 +130,7 @@ function QuickActionFAB({
           { backgroundColor: colors.primary, borderColor: colors.border },
         ]}
       >
-        <Ionicons name={open ? "close" : "add"} size={30} color="#fff" />
+        <Ionicons name={open ? "close" : "grid-outline"} size={30} color="#fff" />
       </TouchableOpacity>
     </View>
   );

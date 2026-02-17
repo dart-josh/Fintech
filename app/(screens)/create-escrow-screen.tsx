@@ -14,7 +14,9 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
-import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 import { useTheme } from "@/theme/ThemeContext";
 import PinModal from "@/components/PinModal";
 import { useUserStore } from "@/store/user.store";
@@ -88,6 +90,7 @@ export default function EscrowScreen() {
   const handleCreateEscrow = () => {
     if (!user?.transaction_pin) {
       toast.show({ type: "warning", message: "Transaction PIN not set" });
+      router.push("/set-pin-intro");
       return;
     }
     setPinVisible(true);
@@ -196,15 +199,37 @@ export default function EscrowScreen() {
     currentDate: Date,
     onChange: (date: Date) => void,
   ) {
+    // Step 1: Open Date Picker
     DateTimePickerAndroid.open({
       value: currentDate,
       mode: "date",
       is24Hour: true,
       onChange: (event, selectedDate) => {
-        if (event.type === "set" && selectedDate) {
-          onChange(selectedDate); // User picked a date
-        }
-        // "dismissed" automatically closes
+        if (event.type !== "set" || !selectedDate) return;
+
+        // Keep selected date
+        const pickedDate = selectedDate;
+
+        // Step 2: Open Time Picker after date is selected
+        DateTimePickerAndroid.open({
+          value: pickedDate,
+          mode: "time",
+          is24Hour: true,
+          onChange: (timeEvent, selectedTime) => {
+            if (timeEvent.type !== "set" || !selectedTime) {
+              onChange(pickedDate);
+              return;
+            }
+
+            // Merge date + time
+            const finalDate = new Date(pickedDate);
+            finalDate.setHours(selectedTime.getHours());
+            finalDate.setMinutes(selectedTime.getMinutes());
+            finalDate.setSeconds(0);
+
+            onChange(finalDate);
+          },
+        });
       },
     });
   }
@@ -382,7 +407,16 @@ export default function EscrowScreen() {
         </Text>
         <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
           <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
+            onPress={() => {
+              if (Platform.OS === "android") {
+                showAndroidDateTimePicker(
+                  expiresAt || new Date(),
+                  setExpiresAt,
+                );
+              } else {
+                setShowDatePicker(true); // iOS still uses inline picker
+              }
+            }}
             style={{ flex: 1 }}
           >
             <Text
@@ -413,9 +447,6 @@ export default function EscrowScreen() {
             display="default"
             onChange={(e: any, date?: Date) => {
               if (date) setExpiresAt(date);
-            }}
-            onBlur={() => {
-              if (Platform.OS === "android") setShowDatePicker(false);
             }}
           />
         )}

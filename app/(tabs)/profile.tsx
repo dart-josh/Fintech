@@ -18,6 +18,7 @@ import { getInitials } from "@/hooks/format.hook";
 import { BeneficiaryModal } from "@/components/BeneficiaryModal";
 import { logout } from "@/services/auth.service";
 import * as WebBrowser from "expo-web-browser";
+import { useConfirmStore } from "@/store/confirmation.store";
 
 const openWebsite = async (url: string) => {
   await WebBrowser.openBrowserAsync(url);
@@ -195,21 +196,27 @@ function ProfileSummary() {
             You are currently on {verificationDetails?.tier}
           </Text>
           <Text style={[summaryStyles.tierHint, { color: colors.primary }]}>
-            {verificationDetails?.tier !== "Tier 4" ? "Upgrade your limit" : "You have access to all features"}
+            {verificationDetails?.tier !== "Tier 4"
+              ? "Upgrade your limit"
+              : "You have access to all features"}
           </Text>
         </View>
 
-        {verificationDetails?.tier !== "Tier 4" && <TouchableOpacity
-          onPress={() => router.push("/account-limits")}
-          style={[
-            summaryStyles.upgradeBtn,
-            { backgroundColor: colors.primaryContainer },
-          ]}
-        >
-          <Text style={[summaryStyles.upgradeText, { color: colors.primary }]}>
-            Upgrade
-          </Text>
-        </TouchableOpacity>}
+        {verificationDetails?.tier !== "Tier 4" && (
+          <TouchableOpacity
+            onPress={() => router.push("/account-limits")}
+            style={[
+              summaryStyles.upgradeBtn,
+              { backgroundColor: colors.primaryContainer },
+            ]}
+          >
+            <Text
+              style={[summaryStyles.upgradeText, { color: colors.primary }]}
+            >
+              Upgrade
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -337,6 +344,7 @@ function ActionItem({
   const iconColor = danger ? colors.error : colors.primary;
   const bgColor = danger ? colors.errorContainer : colors.primaryContainer;
 
+  const confirm = useConfirmStore((state) => state.confirm);
   return (
     <>
       <TouchableOpacity
@@ -350,6 +358,15 @@ function ActionItem({
             } else if (route === "beneficiaries") {
               setModalVisible(true);
             } else if (route === "logout") {
+              const confirmed = await confirm({
+                title: "Logout Device",
+                message: "You are about to logout of this device.",
+                confirmText: "Logout",
+                danger: true,
+                icon: <Feather name="log-out" size={28} color="#ef4444" />,
+              });
+
+              if (!confirmed) return;
               logout();
               router.replace("/welcome");
             } else {

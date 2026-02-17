@@ -34,6 +34,7 @@ import { useEscrowStore } from "@/store/escrow.store";
 
 export default function EscrowDetailScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [escrow, setEscrow] = useState<Escrow | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -57,25 +58,29 @@ export default function EscrowDetailScreen() {
     escrowRef: string;
   }>();
 
-  async function reFetchEscrow() {
+  async function reFetchEscrow(showLoading = true) {
     if (!escrowRef) return;
 
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const response = await getEscrow({ escrowRef });
 
-      if (!response) {
-        setError("Failed to refresh escrow");
-      } else {
+      if (response) {
         useEscrowStore.getState().updateEscrow(escrowRef, response);
         setEscrow(response);
       }
     } catch {
-      setError("Failed to refresh escrow");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   }
+
+  useEffect(() => {
+    reFetchEscrow(false);
+    const interval = setInterval(() => {reFetchEscrow(false)}, 5000); // auto-refresh every 5s
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---------------- Funding
   const onFund = async () => {
@@ -89,6 +94,7 @@ export default function EscrowDetailScreen() {
       setPinVisible(true);
     } else {
       toast.show({ type: "warning", message: "Transaction PIN Not set" });
+      router.push("/set-pin-intro");
     }
   };
 

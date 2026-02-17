@@ -81,6 +81,7 @@ export default function ChatPage() {
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000); // auto-refresh every 5s
     return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isAtBottom]);
 
   /** Send message */

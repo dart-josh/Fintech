@@ -9,7 +9,7 @@ import {
   useColorScheme,
   StatusBar,
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useConfirmStore } from "@/store/confirmation.store";
 import { Escrow, fetchEscrows } from "@/services/escrow.service";
@@ -24,6 +24,7 @@ export default function EscrowHomeScreen() {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
   const [activeTab, setActiveTab] = useState<"open" | "completed">("open");
+  const [isLoading, setIsLoading] = useState(true);
 
   const { confirm } = useConfirmStore();
 
@@ -41,7 +42,8 @@ export default function EscrowHomeScreen() {
 
   useEffect(() => {
     const getMyEscrows = async () => {
-      fetchEscrows({ userId: user?.id ?? "" });
+      await fetchEscrows({ userId: user?.id ?? "" });
+      setIsLoading(false);
     };
 
     getMyEscrows();
@@ -65,11 +67,11 @@ export default function EscrowHomeScreen() {
       )
     : [];
 
-    useEffect(() => {
-        if (openEscrows.length === 0) {
-            setActiveTab("completed");
-        }
-    }, [escrows, openEscrows.length]);
+  useEffect(() => {
+    if (openEscrows.length === 0 && !isLoading) {
+      setActiveTab("completed");
+    }
+  }, [escrows, openEscrows.length, isLoading]);
 
   const displayedEscrows =
     activeTab === "open" ? openEscrows : completedEscrows;
@@ -140,8 +142,19 @@ export default function EscrowHomeScreen() {
           Escrow
         </Text>
 
-        <TouchableOpacity>
-          <Feather name="clock" size={22} color={theme.textPrimary} />
+        <TouchableOpacity
+          onPress={() => {
+            router.push({
+              pathname: "/history",
+              params: { type: "escrow" },
+            });
+          }}
+        >
+          <Ionicons
+            name="receipt-outline"
+            size={22}
+            color={theme.textPrimary}
+          />
         </TouchableOpacity>
       </View>
 
@@ -176,13 +189,15 @@ export default function EscrowHomeScreen() {
       </View>
 
       {/* 📋 Escrow List */}
-      {displayedEscrows.length > 0 && <FlatList
-        data={displayedEscrows}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ padding: 20 }}
-        showsVerticalScrollIndicator={false}
-      /> || <NoEscrows activeTab={activeTab} />}
+      {(displayedEscrows.length > 0 && (
+        <FlatList
+          data={displayedEscrows}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ padding: 20 }}
+          showsVerticalScrollIndicator={false}
+        />
+      )) || <NoEscrows activeTab={activeTab} />}
 
       {/* ➕ Floating Create Escrow */}
       <TouchableOpacity
@@ -263,7 +278,7 @@ function TabButton({ label, active, onPress, theme }: any) {
   );
 }
 
-function NoEscrows({activeTab}: any ) {
+function NoEscrows({ activeTab }: any) {
   const { colors } = useTheme();
 
   return (
@@ -283,9 +298,11 @@ function NoEscrows({activeTab}: any ) {
         <Text style={[noEscrowsStyles.title, { color: colors.text }]}>
           No Escrows
         </Text>
-        <Text style={[noEscrowsStyles.subtitle, { color: colors.textSecondary }]}>
-          You currently have no {activeTab === "open" ? "active" : "completed"} escrows. Start by creating a
-          new one to manage payments securely.
+        <Text
+          style={[noEscrowsStyles.subtitle, { color: colors.textSecondary }]}
+        >
+          You currently have no {activeTab === "open" ? "active" : "completed"}{" "}
+          escrows. Start by creating a new one to manage payments securely.
         </Text>
       </View>
     </View>

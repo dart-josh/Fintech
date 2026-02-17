@@ -17,6 +17,11 @@ export default function TransactionsPage() {
     type: string;
   }>();
 
+  const escrowTransactions = (transaction?: Transaction[]) => {
+    if (!transaction) return [];
+    return transaction.filter((t: Transaction) => t.reference?.startsWith('ESC-'));
+  }
+
   const { wallet } = useWalletStore();
   const transactions =
     type === "airtime"
@@ -25,7 +30,7 @@ export default function TransactionsPage() {
         ? wallet?.dataTransactions
         : type === "withdraw"
           ? wallet?.withdrawTransactions
-          : wallet?.transactions;
+          : type === "escrow" ? escrowTransactions(wallet?.transactions) : wallet?.transactions;
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const isCredit = item.type === "Payment Received" || item.type === "Top-up";

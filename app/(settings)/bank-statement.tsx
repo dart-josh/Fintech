@@ -115,7 +115,6 @@ export default function BankStatementPage() {
         >
           {item.filterType === "credit" ? "+" : "-"}₦
           {Number(item.amount).toLocaleString("en-US", {
-            minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}
         </Text>

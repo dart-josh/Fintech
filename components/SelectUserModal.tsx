@@ -111,12 +111,12 @@ export const SelectUserModal = ({ visible, onClose, onSelectUser }: Props) => {
               </View>
 
               {/* Username Input */}
-              <Text style={[styles.label, { color: "#888" }]}>Username</Text>
+              <Text style={[styles.label, { color: "#888" }]}>User detail</Text>
               <View style={[styles.inputRow, { backgroundColor: colors.border }]}>
                 <TextInput
                   value={username}
                   onChangeText={setUsername}
-                  placeholder="Enter username"
+                  placeholder="Username / Phone / Email / Code"
                   placeholderTextColor="#999"
                   style={[styles.input, { color: colors.textPrimary }]}
                 />
