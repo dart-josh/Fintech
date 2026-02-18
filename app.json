@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.sample.arigopay",
       "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "We need your location to autofill your address."
+        "NSLocationWhenInUseUsageDescription": "We need your location to autofill your address.",
+        "NSContactsUsageDescription": "This app needs access to your contacts to select phone numbers."
       }
     },
     "android": {

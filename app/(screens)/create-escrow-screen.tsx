@@ -254,7 +254,7 @@ export default function EscrowScreen() {
       {/* ---------------- SCROLLABLE CONTENT ---------------- */}
       <KeyboardAwareScrollView
         ref={scrollRef}
-        style={{ flex: 1 }}
+        style={{ flex: 1, marginBottom: insets.bottom + 50 }}
         contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         enableOnAndroid
         enableAutomaticScroll

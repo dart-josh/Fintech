@@ -34,6 +34,7 @@ import { fetchUser } from "@/services/user.service";
 import { lookUpNumber, purchaseData } from "@/services/wallet.service";
 import PinModal from "@/components/PinModal";
 import { Image } from "react-native";
+import ContactPickerModal from "@/components/ContactPickerModal";
 
 export default function DataTopUp() {
   const router = useRouter();
@@ -52,6 +53,8 @@ export default function DataTopUp() {
 
   const [payModal, setPayModal] = useState(false);
 
+  const [contactModalVisible, setContactModalVisible] = useState(false);
+
   const [pinVisible, setPinVisible] = useState(false);
   const [pinError, setPinError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -64,16 +67,16 @@ export default function DataTopUp() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-      const getNetwork = async () => {
-        const _network = await lookUpNumber({ phone: number });
-        if (_network) {
-          const net = NETWORKS.find((n) => n.key === _network);
-          if (net) setNetwork(net);
-        }
-      };
-  
-      if (number.length === 11) getNetwork();
-    }, [number]);
+    const getNetwork = async () => {
+      const _network = await lookUpNumber({ phone: number });
+      if (_network) {
+        const net = NETWORKS.find((n) => n.key === _network);
+        if (net) setNetwork(net);
+      }
+    };
+
+    if (number.length === 11) getNetwork();
+  }, [number]);
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -246,7 +249,7 @@ export default function DataTopUp() {
           />
 
           {/* Contacts */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setContactModalVisible(true)}>
             <Feather name="user" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -263,6 +266,14 @@ export default function DataTopUp() {
         {/* ================= SERVICE ================= */}
         <Service />
       </KeyboardAwareScrollView>
+
+      <ContactPickerModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+        onSelect={(selectedPhone) => {
+          setNumber(selectedPhone);
+        }}
+      />
 
       {/* ================= NETWORK MODAL ================= */}
       <NetworkSelector

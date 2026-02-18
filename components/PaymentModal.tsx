@@ -10,6 +10,7 @@ import {
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { formatNumberSpace } from "@/hooks/format.hook";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type PaymentModalProps = {
   visible: boolean;
@@ -40,10 +41,12 @@ export default function PaymentModal({
   const numericBalance = Number(userBalance.replace(/,/g, ""));
   const isInsufficient = numericBalance < amount;
 
+  const insets = useSafeAreaInsets();
+
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.card }]}>
+        <View style={[styles.modal, { backgroundColor: colors.card, paddingBottom: insets.bottom + 10 }]}>
           {/* Close */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Feather name="x" size={22} color={colors.text} />

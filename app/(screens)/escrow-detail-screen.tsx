@@ -307,7 +307,8 @@ export default function EscrowDetailScreen() {
       <EscrowTopBar escrow={escrow} />
 
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
+      style={{marginBottom: insets.bottom + 10}}
+        contentContainerStyle={{ paddingHorizontal: 16  }}
       >
         <EscrowAmountCard escrow={escrow} onCancel={onCancel} />
         <EscrowDescription description={escrow?.description} />
@@ -1073,7 +1074,7 @@ function EscrowActions({
     <View
       style={[
         actionStyles.container,
-        { backgroundColor: colors.backgroundOff, bottom: 20 },
+        { backgroundColor: colors.backgroundOff, bottom: insets.bottom + 10 },
       ]}
     >
       {/* ================= PENDING ================= */}

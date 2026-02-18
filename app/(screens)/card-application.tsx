@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { requestCard } from "@/services/card.service";
 import { useToastStore } from "@/store/toast.store";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 export default function CardApplication() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function CardApplication() {
   const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
-   const { user } = useUserStore();
+  const { user } = useUserStore();
 
   const [fullName, setFullName] = useState(user?.fullname ?? "");
   const [dob, setDob] = useState("");
@@ -34,27 +35,31 @@ export default function CardApplication() {
   const isNotValid = !fullName || !dob || !address || !phone || !email;
   const toast = useToastStore.getState();
 
-  const handleSubmit = async() => {
+  const handleSubmit = async () => {
     // Here you can handle form validation and submission
     if (isNotValid) return;
 
     const res = await requestCard({
-      full_name: fullName, dob, address,  phone, email, userId: user?.id ?? ""
+      full_name: fullName,
+      dob,
+      address,
+      phone,
+      email,
+      userId: user?.id ?? "",
     });
 
     if (!res) return;
 
     router.back();
-    toast.show({message: 'Card request submitted', type: 'success'});
+    toast.show({ message: "Card request submitted", type: "success" });
   };
 
   return (
-    <KeyboardAvoidingView
+    <View
       style={[
         styles.container,
         { backgroundColor: isDark ? colors.background : "#F4F5F7" },
       ]}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Top Bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
@@ -69,7 +74,11 @@ export default function CardApplication() {
         </Text>
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        enableAutomaticScroll
+        extraScrollHeight={130}
         contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
@@ -189,16 +198,19 @@ export default function CardApplication() {
 
           {/* CTA Button */}
           <TouchableOpacity
-          disabled={isNotValid}
-            style={[styles.submitButton, { backgroundColor: !isNotValid ? colors.primary : colors.muted }]}
+            disabled={isNotValid}
+            style={[
+              styles.submitButton,
+              { backgroundColor: !isNotValid ? colors.primary : colors.muted },
+            ]}
             onPress={handleSubmit}
           >
             <Text style={styles.submitText}>Submit Application</Text>
             <Feather name="arrow-right" size={18} color="#FFF" />
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAwareScrollView>
+    </View>
   );
 }
 

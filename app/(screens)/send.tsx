@@ -150,7 +150,7 @@ export default function SendPage() {
           keyboardShouldPersistTaps="handled"
           enableOnAndroid
           enableAutomaticScroll
-          extraScrollHeight={10}
+          extraScrollHeight={130}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingBottom: keyboardOpen

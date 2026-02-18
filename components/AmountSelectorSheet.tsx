@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useTheme } from "@/theme/ThemeContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function AmountSelectorSheet({
   onClose,
@@ -17,12 +18,14 @@ export default function AmountSelectorSheet({
     if (value.length < 9) setValue(value + num);
   };
 
+  const insets = useSafeAreaInsets();
+
   return (
     <View style={styles.overlay}>
       <View
         style={[
           styles.sheet,
-          { backgroundColor: isDark ? "#020617" : "#FFFFFF" },
+          { backgroundColor: isDark ? "#020617" : "#FFFFFF", paddingBottom: insets.bottom + 10 },
         ]}
       >
         <Text style={[styles.title, { color: isDark ? "#F8FAFC" : "#020617" }]}>

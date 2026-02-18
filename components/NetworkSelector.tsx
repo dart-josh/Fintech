@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NetworkSelector({
   networkModal,
@@ -23,10 +24,11 @@ export default function NetworkSelector({
   setNetwork: any;
 }) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Modal visible={networkModal} transparent animationType="fade">
       <Pressable style={styles.overlay} onPress={() => setNetworkModal(false)}>
-        <View style={[styles.networkModal, { backgroundColor: colors.card }]}>
+        <View style={[styles.networkModal, { backgroundColor: colors.card, paddingBottom: insets.bottom + 10 }]}>
           {NETWORKS.map((net) => {
             const selected = net.key === network.key;
             return (

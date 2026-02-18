@@ -25,6 +25,7 @@ import { useUserStore } from "@/store/user.store";
 import { useToastStore } from "@/store/toast.store";
 import { lookUpNumber, purchaseAirtime } from "@/services/wallet.service";
 import { useWalletStore } from "@/store/wallet.store";
+import ContactPickerModal from "@/components/ContactPickerModal";
 
 export default function AirtimeTopUp() {
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function AirtimeTopUp() {
   const [number, setNumber] = useState(myPhone);
 
   const [payModal, setPayModal] = useState(false);
+
+  const [contactModalVisible, setContactModalVisible] = useState(false);
 
   const [pinVisible, setPinVisible] = useState(false);
   const [pinError, setPinError] = useState("");
@@ -236,7 +239,7 @@ export default function AirtimeTopUp() {
           />
 
           {/* Contacts */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => setContactModalVisible(true)}>
             <Feather name="user" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -253,6 +256,14 @@ export default function AirtimeTopUp() {
         {/* ================= SERVICE ================= */}
         <Service />
       </KeyboardAwareScrollView>
+
+      <ContactPickerModal
+        visible={contactModalVisible}
+        onClose={() => setContactModalVisible(false)}
+        onSelect={(selectedPhone) => {
+          setNumber(selectedPhone);
+        }}
+      />
 
       {/* ================= NETWORK MODAL ================= */}
       <NetworkSelector
