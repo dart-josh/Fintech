@@ -1,4 +1,3 @@
-// app/index.tsx
 import { Redirect } from "expo-router";
 
 import "react-native-get-random-values";
