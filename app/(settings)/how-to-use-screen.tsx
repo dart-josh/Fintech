@@ -64,19 +64,37 @@ export default function HowToUseScreen() {
       ],
     },
     {
-      title: "Escrow Transactions",
+      title: "Create Escrow Transaction",
       icon: "lock",
       steps: [
         "Go to “Escrow”.",
         "Select new escrow.",
         "Enter the escrow amount.",
         "Select a user by scanning the payment code or inputting it manually.",
-        "Assign parties accordingly (Buyer/Seller).",
-        "Add a description about the transaction.",
+        "Assign parties accordingly using the SWAP button in the middle (Buyer/Seller).",
+        "Add a description about the transaction. (E.g Payment for Laptop purchase)",
         "Select a duration for the transaction using the Expiry Date & Time picker.",
         "Confirm details and create escrow.",
         "Enter your transaction PIN to authorize.",
         "The other party would be notified about the transaction.",
+      ],
+    },
+    {
+      title: "Escrow – Buyer Actions",
+      icon: "user",
+      steps: [
+        "Click “Fund Escrow” to authorize payment and securely lock funds for the product or service.",
+        "Once you have received and confirmed the product or service, click “Release Funds” to authorize the transfer of escrowed funds to the seller.",
+        "If you experience any issues or have concerns regarding the transaction, click the “Report Issue” icon (⚠️) at the bottom of the screen to initiate a dispute.",
+      ],
+    },
+    {
+      title: "Escrow – Seller Actions",
+      icon: "briefcase",
+      steps: [
+        "Once the escrow has been funded by the buyer, click “Deliver” to confirm that the product or service has been provided.",
+        "If necessary, click “Refund” to return the escrowed funds to the buyer.",
+        "If you experience any issues or have concerns regarding the transaction, click the “Report Issue” icon (⚠️) at the bottom of the screen to initiate a dispute.",
       ],
     },
     {

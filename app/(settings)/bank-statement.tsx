@@ -89,7 +89,13 @@ export default function BankStatementPage() {
     if (filter !== "all" && filter !== item.filterType) return null;
 
     return (
-      <View
+      <TouchableOpacity
+        onPress={() =>
+          router.push({
+            pathname: "/transaction-details",
+            params: { ...item },
+          })
+        }
         style={[
           styles.transactionItem,
           { backgroundColor: isDark ? "#2E2E3A" : "#fff" },
@@ -118,7 +124,7 @@ export default function BankStatementPage() {
             maximumFractionDigits: 2,
           })}
         </Text>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -298,7 +304,15 @@ export default function BankStatementPage() {
       </View>
 
       {/* Date Range */}
-      <Text style={{textAlign: 'center', marginBottom: 2, color: colors.textSecondary}}>Select Date Range:</Text>
+      <Text
+        style={{
+          textAlign: "center",
+          marginBottom: 2,
+          color: colors.textSecondary,
+        }}
+      >
+        Select Date Range:
+      </Text>
       <View style={styles.dateRangeContainer}>
         <TouchableOpacity
           style={[styles.dateButton, { borderColor: colors.border }]}

@@ -168,6 +168,13 @@ export const NETWORKS = [
   { key: "9mobile", name: "9Mobile", image: require("@/assets/network/9mobile.png")  },
 ];
 
+export const TV_PROVIDERS = [
+  { key: "mtn", name: "MTN", image: require("@/assets/network/MTN.png") },
+  { key: "airtel", name: "Airtel", image: require("@/assets/network/airtel.png")  },
+  { key: "glo", name: "GLO", image: require("@/assets/network/glo.png")  },
+  { key: "9mobile", name: "9Mobile", image: require("@/assets/network/9mobile.png")  },
+];
+
 type Bundle = {
   bundle: number;
   size: string;

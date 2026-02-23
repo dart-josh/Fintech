@@ -23,7 +23,7 @@ import { useUIStore } from "@/store/ui.store";
 import { registerForPushNotifications } from "@/services/notification.service";
 import * as SecureStore from "expo-secure-store";
 import { DedicatedAccountModal } from "@/components/DedicatedAccountModal";
-import { sendEmailCode } from "@/services/auth.service";
+import * as WebBrowser from "expo-web-browser";
 import SpendingInsights from "@/components/SpendingInsights";
 
 // MAIN DASHBOARD SCREEN
@@ -51,9 +51,18 @@ const DashboardScreen = () => {
     setRefreshing(false);
   }, [userId]);
 
+  // useEffect(() => {
+  //   fetchUser(userId);
+  // }, [userId]);
+
   useEffect(() => {
-    fetchUser(userId);
-  }, [userId]);
+    fetchUser(userId, false);
+    const interval = setInterval(() => {
+      fetchUser(userId, false);
+    }, 5000); // auto-refresh every 5s
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     setBalanceVisible(showBalance);
@@ -130,8 +139,9 @@ const DashboardScreen = () => {
         <QuickActions isDark={isDark} setModalVisible={setModalVisible} />
 
         <EventBox
-          title="ArigoPay Launch Event"
-          subtitle="Mar 01, 2026 | 10:00 AM"
+          title="SPaHR LAUNCH / INDUCTION CEREMONY"
+          subtitle="Nov 01, 2026 | 8:01 AM"
+          id="96"
         />
 
         <RecentTransactions isDark={isDark} />
@@ -290,7 +300,6 @@ const toast = useToastStore.getState();
 // 2. WALLET INFO
 const WalletInfo = ({ balanceVisible, setBalanceVisible, isDark }: any) => {
   const router = useRouter();
-  const { colors } = useTheme();
   const { user, verificationDetails } = useUserStore();
   const { wallet } = useWalletStore();
   const emailVerified = user?.emailVerified ?? false;
@@ -695,6 +704,7 @@ const QuickActionsStyles = StyleSheet.create({
 
 // 4. RECENT TRANSACTIONS
 const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
+  const router = useRouter();
   const { wallet } = useWalletStore();
   const recent = wallet?.transactions.slice(0, 5) ?? [];
 
@@ -727,7 +737,13 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
             ]}
           >
             {/* LEFT: description + date */}
-            <View
+            <TouchableOpacity
+              onPress={() =>
+                router.push({
+                  pathname: "/transaction-details",
+                  params: { ...tx },
+                })
+              }
               style={{
                 flex: 1, // 👈 TAKE AVAILABLE SPACE
                 marginRight: 12, // 👈 SPACE BEFORE AMOUNT
@@ -754,7 +770,7 @@ const RecentTransactions = ({ isDark }: { isDark: boolean }) => {
               >
                 {tx.date}
               </Text>
-            </View>
+            </TouchableOpacity>
 
             {/* RIGHT: amount */}
             <Text
@@ -825,22 +841,29 @@ const TransactionStyles = StyleSheet.create({
 type EventBoxProps = {
   title: string;
   subtitle?: string;
+  id?: string;
 };
 
-function EventBox({ title, subtitle }: EventBoxProps) {
+function EventBox({ title, subtitle, id }: EventBoxProps) {
+  const openWebsite = async (url: string) => {
+    if (id) await WebBrowser.openBrowserAsync(url);
+  };
+  const url = `https://mputuevents.com/details?id=${id}`;
   return (
-    <LinearGradient
-      colors={["#FF6FD8", "#4B7BEC", "#6A5DFD"]} // vibrant, colorful gradient
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={EventStyles.container}
-    >
-      <View style={EventStyles.badge}>
-        <Text style={EventStyles.badgeText}>Event</Text>
-      </View>
-      <Text style={EventStyles.title}>{title}</Text>
-      {subtitle && <Text style={EventStyles.subtitle}>{subtitle}</Text>}
-    </LinearGradient>
+    <TouchableOpacity onPress={() => openWebsite(url)}>
+      <LinearGradient
+        colors={["#FF6FD8", "#4B7BEC", "#6A5DFD"]} // vibrant, colorful gradient
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={EventStyles.container}
+      >
+        <View style={EventStyles.badge}>
+          <Text style={EventStyles.badgeText}>MPUTU EVENTS</Text>
+        </View>
+        <Text style={EventStyles.title}>{title}</Text>
+        {subtitle && <Text style={EventStyles.subtitle}>{subtitle}</Text>}
+      </LinearGradient>
+    </TouchableOpacity>
   );
 }
 

@@ -13,6 +13,8 @@ import { useRouter } from "expo-router";
 import { useToastStore } from "@/store/toast.store";
 import { sendEmailCode } from "@/services/auth.service";
 import { useUserStore } from "@/store/user.store";
+import { sendEmail } from "@/hooks/generalFn";
+import * as Clipboard from "expo-clipboard";
 
 /* ======================================================
    EMAIL VERIFICATION PAGE
@@ -22,8 +24,9 @@ export default function EmailVerificationPage() {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
+  const toast = useToastStore();
 
-  const {user} = useUserStore();
+  const { user } = useUserStore();
 
   const userEmail = user?.email ?? "";
 
@@ -51,6 +54,14 @@ export default function EmailVerificationPage() {
     }
 
     // router.push('/verify-otp')
+  };
+
+  const copyToClipboard = (text: string) => {
+    Clipboard.setStringAsync(text);
+    toast.show({
+      message: "Opening mail...",
+      type: "success",
+    });
   };
 
   return (
@@ -149,15 +160,38 @@ export default function EmailVerificationPage() {
               If this is not your email address, or if you would like to update
               your email before continuing, please send a message to:
             </Text>
-            <Text
+            <TouchableOpacity
+              onPress={() => {
+                copyToClipboard("support@arigopay.com");
+                const emailBody =
+                  "Hello,\n" +
+                  "I would like to request to change my email address:\n\n" +
+                  "Current email:\n" +
+                  `${user?.email ?? ""}\n\n` +
+                  "Requested Change:\n" +
+                  `Email: \n\n` +
+                  "Make sure this email is sent from your Arigopay registered email address.\n" +
+                  "Thank you.";
+
+                sendEmail(
+                  "support@arigopay.com",
+                  "Request to change email",
+                  emailBody,
+                );
+              }}
               style={{
-                color: isDark ? "#F1F5F9" : "#1E293B",
-                fontWeight: "bold",
                 marginTop: 4,
               }}
             >
-              support@arigopay.com
-            </Text>
+              <Text
+                style={{
+                  color: isDark ? "#F1F5F9" : "#1E293B",
+                  fontWeight: "bold",
+                }}
+              >
+                support@arigopay.com
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 

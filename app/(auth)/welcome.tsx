@@ -7,7 +7,6 @@ import {
   Animated,
   Dimensions,
   Image,
-  ScrollView,
 } from "react-native";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
@@ -55,6 +54,7 @@ export default function WelcomeScreen() {
       duration: 5000,
       useNativeDriver: false,
     }).start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex]);
 
   const renderProgressBars = () =>
@@ -110,19 +110,19 @@ export default function WelcomeScreen() {
           style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
           onPress={() => router.push("/register")}
         >
-          <Text style={[styles.primaryText]}>Get Started</Text>
+          <Text style={[styles.primaryText]}>Create Account</Text>
         </Pressable>
 
         <Pressable
           style={[
             styles.secondaryBtn,
-            { backgroundColor: colors.accent + "22" },
+            { backgroundColor: colors.accent + "60" },
           ]}
           onPress={() => router.push("/login")}
         >
-          <Text style={[styles.secondaryText]}>
+          <Text style={[styles.secondaryText, {color: "#ffffff"}]}>
             Login to Account{" "}
-            <Text style={{ fontSize: 16 }}>→</Text>
+            <Text style={{ fontSize: 16,  }}>→</Text>
           </Text>
         </Pressable>
       </View>

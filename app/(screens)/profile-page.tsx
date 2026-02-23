@@ -13,6 +13,8 @@ import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { formatNGPhone, getInitials } from "@/hooks/format.hook";
+import { useToastStore } from "@/store/toast.store";
+import { sendEmail } from "@/hooks/generalFn";
 
 /* ======================================================
    PROFILE PAGE
@@ -22,6 +24,7 @@ export default function ProfilePage() {
   const insets = useSafeAreaInsets();
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
+  const toast = useToastStore();
 
   const { user, verificationDetails } = useUserStore();
 
@@ -32,6 +35,10 @@ export default function ProfilePage() {
 
   const copyToClipboard = (text: string) => {
     Clipboard.setStringAsync(text);
+    toast.show({
+      message: "Opening mail...",
+      type: "success",
+    });
   };
 
   return (
@@ -152,15 +159,46 @@ export default function ProfilePage() {
               If you have any issues with your information or will like to
               change any, please send a message to
             </Text>
-            <Text
+            <TouchableOpacity
+              onPress={() => {
+                copyToClipboard("support@arigopay.com");
+                const emailBody =
+                  "Hello,\n" +
+                  "I would like to request an update to my profile details. Please find my current information and the requested changes below:\n\n" +
+                  "Current Details:\n" +
+                  `First Name: ${user?.fullname.split(" ")![0] ?? ""}\n` +
+                  `Last Name: ${user?.fullname.split(" ")![1] ?? ""}\n` +
+                  `Phone: ${formatNGPhone(user?.phone ?? "")}\n` +
+                  `Email: ${user?.email ?? ""}\n` +
+                  `Username: @${user?.username ?? ""}\n\n` +
+                  "Requested Changes:\n" +
+                  `First Name: \n` +
+                  `Last Name: \n` +
+                  `Phone: \n` +
+                  `Email: \n` +
+                  `Username: \n\n` +
+                  "Make sure this email is sent from your Arigopay registered email address.\n" +
+                  "Thank you.";
+
+                sendEmail(
+                  "support@arigopay.com",
+                  "Request to change profile details",
+                  emailBody,
+                );
+              }}
               style={{
-                color: isDark ? "#F1F5F9" : "#1E293B",
-                fontWeight: "bold",
                 marginTop: 4,
               }}
             >
-              support@aririgopay.com
-            </Text>
+              <Text
+                style={{
+                  color: isDark ? "#F1F5F9" : "#1E293B",
+                  fontWeight: "bold",
+                }}
+              >
+                support@arigopay.com
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

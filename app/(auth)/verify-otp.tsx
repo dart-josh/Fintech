@@ -102,13 +102,13 @@ const formattedTarget =
             <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
           </Pressable>
 
-          <Pressable style={[styles.iconBtn, { backgroundColor: colors.card }]} onPress={() => router.push('/chat-page')}>
+          {/* <Pressable style={[styles.iconBtn, { backgroundColor: colors.card }]} onPress={() => router.push('/chat-page')}>
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={18}
               color={colors.textPrimary}
             />
-          </Pressable>
+          </Pressable> */}
         </View>
 
         {/* ================= Header ================= */}

@@ -81,7 +81,7 @@ export default function ChatPage() {
     fetchMessages();
     const interval = setInterval(fetchMessages, 5000); // auto-refresh every 5s
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, isAtBottom]);
 
   /** Send message */
@@ -115,38 +115,38 @@ export default function ChatPage() {
   const renderMessage = ({ item }: { item: any }) => {
     const isUser = item.sender === "user";
     return (
-      <Pressable
-        onLongPress={async () => {
-          const toast = useToastStore.getState();
-          await Clipboard.setStringAsync(item.text);
-
-          if (Platform.OS === "android") {
-            ToastAndroid.show("Copied to clipboard", ToastAndroid.SHORT);
-          } else {
-            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-
-          toast.show({
-            message: "Message copied",
-            type: "success",
-          });
-        }}
-        delayLongPress={350}
-        style={({ pressed }) => [
-          pressed && { opacity: 0.75, transform: [{ scale: 0.85 }] },
+      <View
+        style={[
+          styles.messageContainer,
+          {
+            alignSelf: isUser ? "flex-end" : "flex-start",
+            backgroundColor: isUser
+              ? colors.primary
+              : isDark
+                ? "#2E2E3A"
+                : "#F3F4F6",
+          },
         ]}
       >
-        <View
-          style={[
-            styles.messageContainer,
-            {
-              alignSelf: isUser ? "flex-end" : "flex-start",
-              backgroundColor: isUser
-                ? colors.primary
-                : isDark
-                  ? "#2E2E3A"
-                  : "#F3F4F6",
-            },
+        <Pressable
+          onLongPress={async () => {
+            const toast = useToastStore.getState();
+            await Clipboard.setStringAsync(item.text);
+
+            if (Platform.OS === "android") {
+              ToastAndroid.show("Copied to clipboard", ToastAndroid.SHORT);
+            } else {
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+
+            toast.show({
+              message: "Message copied",
+              type: "success",
+            });
+          }}
+          delayLongPress={350}
+          style={({ pressed }) => [
+            pressed && { opacity: 0.75, transform: [{ scale: 0.85 }] },
           ]}
         >
           <Text
@@ -157,8 +157,8 @@ export default function ChatPage() {
           >
             {item.text}
           </Text>
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
     );
   };
 

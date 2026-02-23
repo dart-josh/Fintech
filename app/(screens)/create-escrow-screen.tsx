@@ -8,7 +8,6 @@ import {
   Keyboard,
   Platform,
   StyleSheet,
-  Vibration,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,21 +17,15 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import { useTheme } from "@/theme/ThemeContext";
-import PinModal from "@/components/PinModal";
 import { useUserStore } from "@/store/user.store";
-import { useToastStore } from "@/store/toast.store";
 import { SelectUserModal } from "@/components/SelectUserModal";
 import QRCodeScannerModal from "@/components/QRCodeScannerModal";
 import { fetchUserByDetails } from "@/services/user.service";
-import { createEscrow, getEscrow } from "@/services/escrow.service";
-import { verifyTxPin } from "@/services/auth.service";
-import { useEscrowStore } from "@/store/escrow.store";
 
 export default function EscrowScreen() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const toast = useToastStore.getState();
   const { user } = useUserStore.getState();
 
   const [amount, setAmount] = useState("");
@@ -62,8 +55,7 @@ export default function EscrowScreen() {
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
 
   const [loading, setLoading] = useState(false);
-  const [pinVisible, setPinVisible] = useState(false);
-  const [pinError, setPinError] = useState("");
+
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [userError, setUserError] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -87,68 +79,21 @@ export default function EscrowScreen() {
     };
   }, []);
 
-  const handleCreateEscrow = () => {
-    if (!user?.transaction_pin) {
-      toast.show({ type: "warning", message: "Transaction PIN not set" });
-      router.push("/set-pin-intro");
-      return;
-    }
-    setPinVisible(true);
-  };
-
-  const verifyPin = async (pin: string): Promise<boolean> => {
-    const valid = await verifyTxPin({ userId: user?.id ?? "", pin });
-    return valid;
-  };
-
-  const handlePinComplete = async (pin: string) => {
-    setLoading(true);
-    setPinError("");
-
-    try {
-      // 🔐 Verify pin
-      const pinValid = await verifyPin(pin);
-
-      if (!pinValid) {
-        setLoading(false);
-        setPinError("Invalid PIN");
-        Vibration.vibrate(200);
-        return;
-      }
-
-      setPinVisible(false);
-      if (loading) return;
-      setLoading(true);
-
-      // 📦 Create escrow API
-      const escrow = await createEscrow({
-        payerId: payer?.id ?? "",
-        payeeId: payee?.id ?? "",
+  const handleConfirm = () => {
+    router.push({
+      pathname: "/confirm-escrow-screen",
+      params: {
+        payer_id: payer?.id ?? "",
+        payee_id: payee?.id ?? "",
+        payer_full_name: payer?.full_name ?? "",
+        payer_username: payer?.username ?? "",
+        payee_full_name: payee?.full_name ?? "",
+        payee_username: payee?.username ?? "",
         amount,
         description,
         expiresAt: expiresAt?.toString() ?? "",
-      });
-
-      if (!escrow) {
-        return;
-      }
-
-      const newEscrow = await getEscrow({ escrowRef: escrow });
-      if (newEscrow) useEscrowStore.getState().addEscrow(newEscrow);
-
-      toast.show({ type: "success", message: "Escrow created successfully" });
-      router.back();
-      router.push({
-        pathname: "/escrow-detail-screen",
-        params: {
-          escrowRef: escrow,
-        },
-      });
-    } catch (e) {
-      setPinError("Invalid PIN");
-    } finally {
-      setLoading(false);
-    }
+      },
+    });
   };
 
   const handleSelectPayee = (userData: {
@@ -464,7 +409,7 @@ export default function EscrowScreen() {
         >
           <TouchableOpacity
             disabled={!canCreate || loading}
-            onPress={handleCreateEscrow}
+            onPress={handleConfirm}
             style={[
               styles.ctaButton,
               { backgroundColor: canCreate ? colors.accent : colors.muted },
@@ -478,15 +423,6 @@ export default function EscrowScreen() {
           </TouchableOpacity>
         </View>
       )}
-
-      {/* ---------------- PIN MODAL ---------------- */}
-      <PinModal
-        visible={pinVisible}
-        onClose={() => setPinVisible(false)}
-        onComplete={handlePinComplete}
-        error={pinError}
-        isLoading={loading}
-      />
 
       {/* ---------------- SELECT USER MODAL ---------------- */}
       <SelectUserModal

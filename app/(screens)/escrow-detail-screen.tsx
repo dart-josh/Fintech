@@ -51,6 +51,10 @@ export default function EscrowDetailScreen() {
   const { colors } = useTheme();
   const toast = useToastStore();
 
+  const [pinState, setPinState] = useState<"Fund" | "Release">(
+    !escrow ? "Fund" : escrow.status === "pending" ? "Fund" : "Release",
+  );
+
   const isBuyer = escrow?.payer?.id === Number(user?.id);
   const isSeller = escrow?.payee?.id === Number(user?.id);
 
@@ -77,7 +81,9 @@ export default function EscrowDetailScreen() {
 
   useEffect(() => {
     reFetchEscrow(false);
-    const interval = setInterval(() => {reFetchEscrow(false)}, 5000); // auto-refresh every 5s
+    const interval = setInterval(() => {
+      reFetchEscrow(false);
+    }, 5000); // auto-refresh every 5s
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -85,6 +91,7 @@ export default function EscrowDetailScreen() {
   // ---------------- Funding
   const onFund = async () => {
     if (!escrow || !user) return;
+    setPinState("Fund");
     setFundingModalVisible(true);
   };
 
@@ -113,13 +120,27 @@ export default function EscrowDetailScreen() {
 
     try {
       if (!escrow || !user) return;
-      const escrowRef = await fundEscrow({
-        escrowRef: escrow.escrow_ref,
-        payerId: user.id,
-      });
 
-      if (escrowRef) {
-        reFetchEscrow();
+      if (pinState === "Fund") {
+        const escrowRef = await fundEscrow({
+          escrowRef: escrow.escrow_ref,
+          payerId: user.id,
+        });
+
+        if (escrowRef) {
+          reFetchEscrow();
+        }
+      } else if (pinState === "Release") {
+        const escrowRef = await releaseEscrow({
+          escrowRef: escrow.escrow_ref,
+          actorId: user.id,
+        });
+
+        if (escrowRef) {
+          reFetchEscrow();
+        }
+      } else {
+        toast.show({ message: "No valid action", type: "error" });
       }
     } finally {
       setIsLoading(false);
@@ -129,6 +150,15 @@ export default function EscrowDetailScreen() {
   // ---------------------
 
   const confirm = useConfirmStore((state) => state.confirm);
+
+  const handleConfirmRelease = () => {
+    if (user?.transaction_pin) {
+      setPinVisible(true);
+    } else {
+      toast.show({ type: "warning", message: "Transaction PIN Not set" });
+      router.push("/set-pin-intro");
+    }
+  };
 
   const onRelease = async () => {
     if (!escrow || !user) return;
@@ -144,14 +174,8 @@ export default function EscrowDetailScreen() {
 
     if (!confirmed) return;
 
-    const escrowRef = await releaseEscrow({
-      escrowRef: escrow.escrow_ref,
-      actorId: user.id,
-    });
-
-    if (escrowRef) {
-      reFetchEscrow();
-    }
+    setPinState("Release");
+    handleConfirmRelease();
   };
 
   const onApprove = async () => {
@@ -229,7 +253,7 @@ export default function EscrowDetailScreen() {
     const confirmed = await confirm({
       title: "Open Dispute",
       message:
-        "Our team will review this transaction and an action will be taken",
+       "You are about to initiate a dispute for this transaction.\nOur team will carefully review the case and determine the appropriate resolution.\n\nFurther details or documentation may be required.",
       warning: "This action cannot be undone",
       confirmText: "Open Dispute",
       icon: <Feather name="alert-triangle" size={28} color="#f59e0b" />,
@@ -265,6 +289,7 @@ export default function EscrowDetailScreen() {
       }
     }
     fetchEscrow();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {
@@ -307,8 +332,8 @@ export default function EscrowDetailScreen() {
       <EscrowTopBar escrow={escrow} />
 
       <ScrollView
-      style={{marginBottom: insets.bottom + 10}}
-        contentContainerStyle={{ paddingHorizontal: 16  }}
+        style={{ marginBottom: insets.bottom + 10 }}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
       >
         <EscrowAmountCard escrow={escrow} onCancel={onCancel} />
         <EscrowDescription description={escrow?.description} />
@@ -324,7 +349,6 @@ export default function EscrowDetailScreen() {
         onApprove={onApprove}
         onFund={onFund}
         onRefund={onRefund}
-        onCancel={onCancel}
         onDispute={onDispute}
       />
 
@@ -385,6 +409,7 @@ function EscrowTopBar({ escrow }: Props) {
         }),
       ]),
     ).start();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const statusColors: Record<string, string> = {
@@ -1050,7 +1075,6 @@ interface ActionProps {
   onApprove: () => void;
   onFund: () => void;
   onRefund: () => void;
-  onCancel: () => void;
   onDispute: () => void;
 }
 
@@ -1062,13 +1086,26 @@ function EscrowActions({
   onApprove,
   onFund,
   onRefund,
-  onCancel,
   onDispute,
 }: ActionProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
   if (!escrow) return null;
+
+  const DisputeTransaction = () => {
+    return (
+      <TouchableOpacity
+      style={{justifyContent: 'center', alignItems: 'center'}}
+      onPress={onDispute}
+      >
+        <View style={[actionStyles.disputeButton, { backgroundColor: colors.danger, borderColor: colors.border }]}>
+        <Feather name="alert-triangle" size={18} color="#fff" />
+      </View>
+      <Text style={{color: colors.danger, fontSize: 12, marginTop: 4, fontWeight: '600'}}>Dispute</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View
@@ -1165,19 +1202,7 @@ function EscrowActions({
                 </TouchableOpacity>
 
                 {/* Dispute */}
-                <TouchableOpacity
-                  style={[
-                    actionStyles.secondaryButton,
-                    { borderColor: colors.primary },
-                  ]}
-                  onPress={onDispute}
-                >
-                  <Feather
-                    name="alert-triangle"
-                    size={16}
-                    color={colors.primary}
-                  />
-                </TouchableOpacity>
+                <DisputeTransaction />
               </View>
             </>
           ) : (
@@ -1199,19 +1224,7 @@ function EscrowActions({
                 </Text>
               </View>
               {/* Dispute */}
-              <TouchableOpacity
-                style={[
-                  actionStyles.secondaryButton,
-                  { borderColor: colors.primary },
-                ]}
-                onPress={onDispute}
-              >
-                <Feather
-                  name="alert-triangle"
-                  size={16}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
+              <DisputeTransaction />
             </View>
           )}
         </>
@@ -1244,19 +1257,7 @@ function EscrowActions({
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    actionStyles.secondaryButton,
-                    { borderColor: colors.primary },
-                  ]}
-                  onPress={onDispute}
-                >
-                  <Feather
-                    name="alert-triangle"
-                    size={16}
-                    color={colors.primary}
-                  />
-                </TouchableOpacity>
+                <DisputeTransaction />
               </View>
             </>
           ) : (
@@ -1278,136 +1279,13 @@ function EscrowActions({
                 </Text>
               </View>
               {/* Dispute */}
-              <TouchableOpacity
-                style={[
-                  actionStyles.secondaryButton,
-                  { borderColor: colors.primary },
-                ]}
-                onPress={onDispute}
-              >
-                <Feather
-                  name="alert-triangle"
-                  size={16}
-                  color={colors.primary}
-                />
-              </TouchableOpacity>
+              <DisputeTransaction />
             </View>
           )}
         </>
       )}
-
-      {/* ================= REFUND OPTION ================= */}
-      {/* {escrow.status === "funded" && isSeller && (
-      <>
-        <Text style={[actionStyles.label, { color: colors.textSecondary }]}>
-          Return funds to the buyer if necessary
-        </Text>
-
-        <View style={actionStyles.row}>
-          <TouchableOpacity
-            style={[
-              actionStyles.primaryButton,
-              { backgroundColor: "#FF4D4F" },
-            ]}
-            onPress={onRefund}
-          >
-            <Feather name="rotate-ccw" size={18} color={colors.textPrimary} />
-            <Text style={[actionStyles.primaryText, { color: "#1E293B" }]}>
-              Refund Buyer
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              actionStyles.secondaryButton,
-              { borderColor: colors.primary },
-            ]}
-            onPress={onDispute}
-          >
-            <Feather name="alert-triangle" size={16} color={colors.primary} />
-          </TouchableOpacity>
-        </View>
-      </>
-    )} */}
     </View>
   );
-
-  // return (
-  //   <View style={[actionStyles.container]}>
-  //     {/* fund */}
-  //     {escrow.status === "pending" && isBuyer && (
-  //       <TouchableOpacity
-  //         style={[
-  //           actionStyles.primaryButton,
-  //           { backgroundColor: colors.primary },
-  //         ]}
-  //         onPress={onFund}
-  //       >
-  //         <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-  //           Fund escrow
-  //         </Text>
-  //       </TouchableOpacity>
-  //     )}
-
-  //     {/* deliver */}
-  //     {escrow.status === "funded" && isSeller && (
-  //       <TouchableOpacity
-  //         style={[
-  //           actionStyles.primaryButton,
-  //           { backgroundColor: colors.primary },
-  //         ]}
-  //         onPress={onApprove}
-  //       >
-  //         <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-  //           Mark as Delivered
-  //         </Text>
-  //       </TouchableOpacity>
-  //     )}
-
-  //     {/* release */}
-  //     {escrow.status === "delivered" && isBuyer && (
-  //       <TouchableOpacity
-  //         style={[
-  //           actionStyles.primaryButton,
-  //           { backgroundColor: colors.primary },
-  //         ]}
-  //         onPress={onRelease}
-  //       >
-  //         <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-  //           Release Funds
-  //         </Text>
-  //       </TouchableOpacity>
-  //     )}
-
-  //     {/* refund */}
-  //     {escrow.status === "funded" && isSeller && (
-  //       <TouchableOpacity
-  //         style={[
-  //           actionStyles.primaryButton,
-  //           { backgroundColor: colors.primary },
-  //         ]}
-  //         onPress={onRefund}
-  //       >
-  //         <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>
-  //           Refund Buyer
-  //         </Text>
-  //       </TouchableOpacity>
-  //     )}
-
-  //     {/* dispute */}
-  //     {(escrow.status === "funded" || escrow.status === "delivered") && (
-  //       <TouchableOpacity
-  //         style={[
-  //           actionStyles.secondaryButton,
-  //           { borderColor: colors.primary },
-  //         ]}
-  //         onPress={onDispute}
-  //       >
-  //         <Text style={{ color: colors.primary }}>Open Dispute</Text>
-  //       </TouchableOpacity>
-  //     )}
-  //   </View>
-  // );
 }
 
 const actionStyles = StyleSheet.create({
@@ -1455,14 +1333,13 @@ const actionStyles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 
-  secondaryButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+  disputeButton: {
+    width: 35,
+    height: 35,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    backgroundColor: "rgba(255,255,255,0.03)",
   },
 
   cancelButton: {

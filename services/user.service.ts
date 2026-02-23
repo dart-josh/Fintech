@@ -13,13 +13,13 @@ import { getWalletDetails, listBeneficiaries } from "./wallet.service";
 const toast = useToastStore.getState();
 
 // fetch user
-export async function fetchUser(userId: string): Promise<User | null> {
+export async function fetchUser(userId: string, showLd = true): Promise<User | null> {
   const { showLoading, hideLoading } = useUIStore.getState();
 
   try {
     const { setUser, setDevices, setNotification } = useUserStore.getState();
     const { setUserId } = useRegisterStore.getState();
-    showLoading("");
+    if (showLd) showLoading("");
     const res: any = await userApi.fetchUser({ userId });
 
     if (!res.user) return null;
@@ -43,10 +43,10 @@ export async function fetchUser(userId: string): Promise<User | null> {
 
     return user;
   } catch (error: any) {
-    console.error("Fetch User:", error.message);
+    // console.error("Fetch User:", error.message);
     return null;
   } finally {
-    hideLoading();
+    if (showLd) hideLoading();
   }
 }
 

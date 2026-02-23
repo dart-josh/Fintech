@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   Dimensions,
   Vibration,
+  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,14 +19,12 @@ import {
   airtel_bundles,
   glo_bundles,
   mtn_bundles,
-  NETWORKS,
   tmobile_bundles,
+  TV_PROVIDERS,
 } from "@/utils/globalVariables";
-import NetworkSelector from "@/components/NetworkSelector";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import PaymentModal from "@/components/PaymentModal";
-import { formatNumberSpace } from "@/hooks/format.hook";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { useWalletStore } from "@/store/wallet.store";
 import { useToastStore } from "@/store/toast.store";
@@ -33,10 +32,18 @@ import { verifyTxPin } from "@/services/auth.service";
 import { fetchUser } from "@/services/user.service";
 import { lookUpNumber, purchaseData } from "@/services/wallet.service";
 import PinModal from "@/components/PinModal";
-import { Image } from "react-native";
-import ContactPickerModal from "@/components/ContactPickerModal";
+import ProviderSelector from "@/components/ProviderSelector";
 
-export default function DataTopUp() {
+export default function TvSubscription() {
+  const { providerKey } = useLocalSearchParams<{
+    providerKey: string;
+  }>();
+
+  const getProvider = () => {
+    const index = TV_PROVIDERS.findIndex((p) => p.key === providerKey);
+    return index ?? 0;
+  };
+
   const router = useRouter();
   const { theme, colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -44,16 +51,14 @@ export default function DataTopUp() {
 
   const { user } = useUserStore.getState();
 
-  const myPhone = user?.phone ? `0${user?.phone}` : "";
-
-  const [network, setNetwork] = useState(NETWORKS[0]);
-  const [networkModal, setNetworkModal] = useState(false);
+  const [provider, setProvider] = useState(TV_PROVIDERS[getProvider()]);
+  const [providerModal, setProviderModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Bundle | null>(null);
-  const [number, setNumber] = useState(myPhone);
+  const [number, setNumber] = useState("");
+  const [accountDetails, setAccountDetails] = useState("");
+  const [accountError, setAccountError] = useState("");
 
   const [payModal, setPayModal] = useState(false);
-
-  const [contactModalVisible, setContactModalVisible] = useState(false);
 
   const [pinVisible, setPinVisible] = useState(false);
   const [pinError, setPinError] = useState("");
@@ -66,17 +71,17 @@ export default function DataTopUp() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const getNetwork = async () => {
-      const _network = await lookUpNumber({ phone: number });
-      if (_network) {
-        const net = NETWORKS.find((n) => n.key === _network);
-        if (net) setNetwork(net);
-      }
-    };
-
-    if (number.length === 11) getNetwork();
-  }, [number]);
+  const getAccountDetails = async () => {
+    setLoading(true);
+    setAccountError("");
+    const account = await lookUpNumber({ phone: number });
+    setLoading(false);
+    if (account) {
+      setAccountDetails(account);
+    } else {
+      setAccountError("Account does not exist. Please check and re-enter");
+    }
+  };
 
   const handleConfirmPayment = () => {
     setPayModal(false);
@@ -93,6 +98,7 @@ export default function DataTopUp() {
     return valid;
   };
 
+  //!
   const handlePinComplete = async (pin: string) => {
     setIsLoading(true);
     setPinError("");
@@ -113,7 +119,7 @@ export default function DataTopUp() {
         userId: user?.id ?? "",
         amount: selectedPlan?.amount ?? 0,
         phone: number,
-        network: network.key,
+        network: provider.key,
         plan: selectedPlan?.title ?? "",
       });
 
@@ -174,13 +180,13 @@ export default function DataTopUp() {
           <Feather name="arrow-left" size={22} color={colors.text} />
         </TouchableOpacity>
 
-        <Text style={[styles.title, { color: colors.text }]}>Mobile Data</Text>
+        <Text style={[styles.title, { color: colors.text }]}>TV</Text>
 
         <TouchableOpacity
           onPress={() =>
             router.push({
               pathname: "/history",
-              params: { type: "data" },
+              params: { type: "tv" },
             })
           }
         >
@@ -200,6 +206,150 @@ export default function DataTopUp() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {/* =============== PROVIDER SELECTOR ================*/}
+        {/* Network selector */}
+        <View
+          style={{
+            padding: 12,
+            backgroundColor: colors.card,
+            marginBottom: 10,
+          }}
+        >
+          <TouchableOpacity
+            style={[
+              styles.networkSelector,
+              {
+                paddingBottom: 5,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.border,
+              },
+            ]} // isDark ? "#333" : "#EEE"
+            onPress={() => setProviderModal(true)}
+          >
+            <View style={styles.networkLogo}>
+              <Image
+                source={provider.image}
+                style={styles.networkLogo}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
+                {provider.name}
+              </Text>
+            </View>
+            <Feather
+              name="chevron-right"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {/*  */}
+        </View>
+
+        {/* ================= NUMBER SELECTOR ================= */}
+        <View
+          style={[
+            {
+              backgroundColor: colors.card,
+            },
+          ]}
+        >
+          <Text style={{ color: colors.textSecondary, marginBottom: 15 }}>
+            Smartcard Number
+          </Text>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 30,
+              paddingBottom: 10,
+              marginBottom: 10,
+              borderBottomWidth: 1,
+              paddingLeft: 8,
+              borderBottomColor:
+                !loading && accountError
+                  ? colors.danger
+                  : isDark
+                    ? "#333"
+                    : "#EEE",
+            }}
+          >
+            {/* Phone input */}
+            <TextInput
+              value={number}
+              onChangeText={(t) => setNumber(t.replace(/[^0-9]/g, ""))}
+              placeholder="Enter Your Smartcard Number"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              // maxLength={13}
+              style={[styles.numberInput, { color: colors.text }]}
+            />
+
+            {/* clear number */}
+            {number && (
+              <TouchableOpacity
+                onPress={() => setNumber("")}
+                style={{
+                  height: 22,
+                  width: 22,
+                  borderRadius: "50%",
+                  backgroundColor: colors.textSecondary,
+                  alignContent: "center",
+                }}
+              >
+                <Feather name="x" size={20} color="transparent" />
+              </TouchableOpacity>
+            )}
+
+            {/* find account */}
+            {number.length >= 5 && (
+              <TouchableOpacity
+                onPress={() => getAccountDetails()}
+                style={{
+                  height: 28,
+                  borderRadius: "25",
+                  backgroundColor: colors.primary,
+                  alignContent: "center",
+                  paddingHorizontal: 10,
+                }}
+              >
+                <Text style={{ color: isDark ? "#000" : "#fff" }}>Proceed</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {accountError && (
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <View
+                style={{
+                  height: 16,
+                  width: 16,
+                  borderRadius: "50%",
+                  backgroundColor: colors.danger,
+                  alignContent: "center",
+                }}
+              >
+                <Feather name="x" size={14} color="#fff" />
+              </View>
+              <Text style={{ color: colors.danger }}>{accountError}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ================= AMOUNT SELECTOR ================= */}
+        <AmountSelector
+          isDark={isDark}
+          setSelectedPlan={setSelectedPlan}
+          accountDetails={accountDetails}
+          provider={provider.key}
+          setPayModal={() => setPayModal(true)}
+        />
+
         {/* ================= EVENT / REWARD ================= */}
         <LinearGradient
           colors={["#6D5FFD", "#8E7CFF"]}
@@ -207,80 +357,22 @@ export default function DataTopUp() {
           end={{ x: 1, y: 1 }}
           style={styles.rewardBox}
         >
-          <Text style={styles.rewardTitle}>Instant Mobile Data Rewards 🎉</Text>
+          <Text style={styles.rewardTitle}>Power Your Internet Life</Text>
           <Text style={styles.rewardText}>
-            Get bonus airtime when you top up Mobile Data of ₦1,000 and above.
+            Recharge your data now and get massive rewards
           </Text>
         </LinearGradient>
 
-        {/* ================= NUMBER SELECTOR ================= */}
-        <View style={[styles.numberBox, { backgroundColor: colors.card }]}>
-          {/* Network selector */}
-          <TouchableOpacity
-            style={styles.networkSelector}
-            onPress={() => setNetworkModal(true)}
-          >
-            <View style={styles.networkLogo}>
-              <Image
-                source={network.image}
-                style={styles.networkLogo}
-                resizeMode="contain"
-              />
-            </View>
-            <Feather name="chevron-down" size={18} color={colors.text} />
-          </TouchableOpacity>
-
-          <View
-            style={[
-              styles.divider,
-              { backgroundColor: isDark ? "#333" : "#EEE" },
-            ]}
-          />
-
-          {/* Phone input */}
-          <TextInput
-            value={formatNumberSpace(number)}
-            onChangeText={(t) => setNumber(t.replace(/[^0-9]/g, ""))}
-            placeholder="Phone number"
-            placeholderTextColor={colors.muted}
-            keyboardType="number-pad"
-            maxLength={13}
-            style={[styles.numberInput, { color: colors.text }]}
-          />
-
-          {/* Contacts */}
-          <TouchableOpacity onPress={() => setContactModalVisible(true)}>
-            <Feather name="user" size={20} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-
-        {/* ================= AMOUNT SELECTOR ================= */}
-        <AmountSelector
-          isDark={isDark}
-          setSelectedPlan={setSelectedPlan}
-          number={number}
-          network={network.key}
-          setPayModal={() => setPayModal(true)}
-        />
-
         {/* ================= SERVICE ================= */}
-        <Service />
+        {/* <Service /> */}
       </KeyboardAwareScrollView>
 
-      <ContactPickerModal
-        visible={contactModalVisible}
-        onClose={() => setContactModalVisible(false)}
-        onSelect={(selectedPhone) => {
-          setNumber(selectedPhone);
-        }}
-      />
-
       {/* ================= NETWORK MODAL ================= */}
-      <NetworkSelector
-        networkModal={networkModal}
-        setNetworkModal={setNetworkModal}
-        network={network}
-        setNetwork={setNetwork}
+      <ProviderSelector
+        providerModal={providerModal}
+        setProviderModal={setProviderModal}
+        provider={provider}
+        setProvider={setProvider}
       />
 
       {/* ================= PAYMENT MODAL ================= */}
@@ -290,7 +382,7 @@ export default function DataTopUp() {
         type="data"
         dataBundle={selectedPlan?.title}
         amount={Number(selectedPlan?.amount)}
-        networkLogo={network.image}
+        networkLogo={provider.image}
         recipient={number}
         userBalance={userBalance}
         onPay={handleConfirmPayment}
@@ -331,8 +423,8 @@ const categories = [
 
 interface AmountSelectorProps {
   isDark: boolean;
-  number: string;
-  network: string;
+  accountDetails: string;
+  provider: string;
   setSelectedPlan: (plan: Bundle | null) => void;
   setPayModal: () => void;
 }
@@ -354,10 +446,10 @@ export const getBundles = (network: string): Bundle[] => {
   }
 };
 
-const AmountSelector = ({
+export const AmountSelector = ({
   isDark,
-  number,
-  network,
+  accountDetails,
+  provider,
   setSelectedPlan,
   setPayModal,
 }: AmountSelectorProps) => {
@@ -365,11 +457,11 @@ const AmountSelector = ({
 
   const [selectedCategory, setSelectedCategory] = useState("HOT");
 
-  const filteredBundles = getBundles(network).filter(
+  const filteredBundles = getBundles(provider).filter(
     (b) => b.category === selectedCategory,
   );
 
-  const numColumns = 3;
+  const numColumns = 2;
   const ITEM_SPACING = 8;
   const screenWidth = Dimensions.get("window").width;
 
@@ -379,7 +471,7 @@ const AmountSelector = ({
 
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
-      <Text style={[styles.cardTitle, { color: colors.text }]}>Data Plans</Text>
+      <Text style={[styles.cardTitle, { color: colors.text }]}>TV Plans</Text>
 
       {/* ================= CATEGORY TABS ================= */}
       <ScrollView
@@ -439,7 +531,7 @@ const AmountSelector = ({
                 },
               ]}
               onPress={() => {
-                if (number.length === 11) {
+                if (accountDetails) {
                   setSelectedPlan(item);
                   setPayModal();
                 }
@@ -497,7 +589,7 @@ const Service = () => {
   return (
     <View style={[styles.card, { backgroundColor: colors.card }]}>
       <Text style={[styles.cardTitle, { color: colors.text }]}>
-        Mobile Data Service
+        More Events
       </Text>
 
       <TouchableOpacity style={styles.serviceRow}>
@@ -545,7 +637,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    height: 60,
+    paddingVertical: 14,
   },
   networkSelector: { flexDirection: "row", alignItems: "center", gap: 6 },
   networkLogo: {

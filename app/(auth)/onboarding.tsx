@@ -86,13 +86,13 @@ export default function OnboardingScreen() {
           <Ionicons name="arrow-back" size={18} color={colors.textPrimary} />
         </Pressable>
 
-        <Pressable style={[styles.iconBtn, { backgroundColor: colors.card }]}>
+        {/* <Pressable style={[styles.iconBtn, { backgroundColor: colors.card }]}>
           <Ionicons
             name="chatbubble-ellipses-outline"
             size={18}
             color={colors.textPrimary}
           />
-        </Pressable>
+        </Pressable> */}
       </View>
 
       {/* ================= Center (Keyboard-Aware Scroll) ================= */}
