@@ -163,16 +163,70 @@ export const transactions = [
 
 export const NETWORKS = [
   { key: "mtn", name: "MTN", image: require("@/assets/network/MTN.png") },
-  { key: "airtel", name: "Airtel", image: require("@/assets/network/airtel.png")  },
-  { key: "glo", name: "GLO", image: require("@/assets/network/glo.png")  },
-  { key: "9mobile", name: "9Mobile", image: require("@/assets/network/9mobile.png")  },
+  {
+    key: "airtel",
+    name: "Airtel",
+    image: require("@/assets/network/airtel.png"),
+  },
+  { key: "glo", name: "GLO", image: require("@/assets/network/glo.png") },
+  {
+    key: "9mobile",
+    name: "9Mobile",
+    image: require("@/assets/network/9mobile.png"),
+  },
 ];
 
 export const TV_PROVIDERS = [
-  { key: "mtn", name: "MTN", image: require("@/assets/network/MTN.png") },
-  { key: "airtel", name: "Airtel", image: require("@/assets/network/airtel.png")  },
-  { key: "glo", name: "GLO", image: require("@/assets/network/glo.png")  },
-  { key: "9mobile", name: "9Mobile", image: require("@/assets/network/9mobile.png")  },
+  {
+    key: "dstv",
+    name: "DSTV",
+    image: require("@/assets/provider/dstv.png"),
+  },
+  { key: "gotv", name: "GOTV", image: require("@/assets/provider/gotv.png") },
+  {
+    key: "startimes",
+    name: "Startimes",
+    image: require("@/assets/provider/startimes.png"),
+  },
+  {
+    key: "showmax",
+    name: "Showmax",
+    image: require("@/assets/provider/showmax.png"),
+  },
+];
+
+export const ELECTRICITY_PROVIDERS = [
+  {key:"aba-electric", name:"Aba Electricity Distribution Company", image: "",},
+  {key:"abuja-electric", name:"Abuja Electricity Distribution Company", image: "", desc: 'AEDC'},
+  {key:"benin-electric", name:"Benin Electricity Distribution Company", image: "",},
+  {key:"eko-electric", name:"Eko Electricity Distribution Company", image: "",},
+  {key:"enugu-electric", name:"Enugu Electricity Distribution Company", image: "",},
+  {key:"ibadan-electric", name:"Ibadan Electricity Distribution Company", image: "",},
+  {key:"ikeja-electric", name:"Ikeja Electricity Distribution Company", image: "",},
+  {key:"jos-electric", name:"Jos Electricity Distribution Company", image: "",},
+  {key:"kaduna-electric", name:"Kaduna Electricity Distribution Company", image: "",},
+  {key:"kano-electric", name:"Kano Electricity Distribution Company", image: "",},
+  {key:"portharcourt-electric", name:"Port Harcourt Electricity Distribution Company", image: "",},
+  {key:"yola-electric", name:"Yola Electricity Distribution Company", image: "",},
+];
+
+export const BETTING_PROVIDERS = [
+  {key: "Bet9ja", name: "Bet9ja", image: "",},
+  {key: "BetKing", name: "BetKing", image: "",},
+  {key: "1XBet", name: "1XBet", image: "",},
+  {key: "NairaBet", name: "NairaBet", image: "",},
+  {key: "BetBiga", name: "BetBiga", image: "",},
+  {key: "MerryBet", name: "MerryBet", image: "",},
+  {key: "SportyBet", name: "SportyBet", image: "",},
+  {key: "NaijaBet", name: "NaijaBet", image: "",},
+  {key: "Betway", name: "Betway", image: "",},
+  {key: "BangBet", name: "BangBet", image: "",},
+  {key: "MelBet", name: "MelBet", image: "",},
+  {key: "LiveScoreBet", name: "LiveScoreBet", image: "",},
+  {key: "Naira-Million", name: "Naira-Million", image: "",},
+  {key: "CloudBet", name: "CloudBet", image: "",},
+  {key: "Paripesa", name: "Paripesa", image: "",},
+  {key: "MylottoHub", name: "MylottoHub", image: "",},
 ];
 
 type Bundle = {
@@ -183,8 +237,7 @@ type Bundle = {
   title: string;
   category: string;
   addons?: string;
-}; 
-
+};
 
 export const mtn_bundles: Bundle[] = [
   // DAILY / HOT
@@ -237,7 +290,7 @@ export const mtn_bundles: Bundle[] = [
     bundle: 3000,
     size: "3GB",
     duration: "1 Day",
-    amount: 1000,
+    amount: 500000,
     title: "MTN Daily 3GB HOT",
     category: "HOT",
     addons: "1GB Social + 500MB Night",
@@ -348,7 +401,6 @@ export const mtn_bundles: Bundle[] = [
     addons: "20GB Night + 10GB Social",
   },
 ];
-
 
 export const airtel_bundles: Bundle[] = [
   // Airtel bundles

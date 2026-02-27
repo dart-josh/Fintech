@@ -116,39 +116,20 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
 
           <Text style={styles.scanText}>Scan QR Code</Text>
         </View>
-        
+
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={[styles.container, { backgroundColor: cardBg, marginTop: 10 }]}>
-            {/* Payment Code */}
-            <Text style={[styles.label, { color: "#888" }]}>Payment Code</Text>
-
-            <View style={styles.inputRow}>
-              <View style={[styles.prefix, { backgroundColor: inputBg }]}>
-                <Text style={styles.prefixText}>AGP - </Text>
-              </View>
-
-              <TextInput
-                value={paymentCode}
-                onChangeText={onCodeChange}
-                placeholder="123456789"
-                placeholderTextColor="#999"
-                style={[
-                  styles.input,
-                  { color: textColor, backgroundColor: inputBg },
-                ]}
-              />
-
-              <TouchableOpacity onPress={handlePaste} style={styles.iconButton}>
-                <Feather name="clipboard" size={20} color="#007AFF" />
-              </TouchableOpacity>
-            </View>
-
+          <View
+            style={[
+              styles.container,
+              { backgroundColor: cardBg, marginTop: 10 },
+            ]}
+          >
             {/* Verified Name */}
-            {verifiedName && (
+            {(verifiedName && (
               <View style={styles.verifiedRow}>
                 <View>
                   <Text style={[styles.label, { color: "#888" }]}>
-                    Recipient Name
+                    Recipient
                   </Text>
                   <Text style={[styles.verifiedName, { color: textColor }]}>
                     {verifiedName}
@@ -162,6 +143,37 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
                   <Feather name="x" size={18} color="#FF3B30" />
                 </TouchableOpacity>
               </View>
+            )) || (
+              <>
+                {/* Payment Code */}
+                <Text style={[styles.label, { color: "#888" }]}>
+                  Payment Code
+                </Text>
+
+                <View style={styles.inputRow}>
+                  <View style={[styles.prefix, { backgroundColor: inputBg }]}>
+                    <Text style={styles.prefixText}>AGP - </Text>
+                  </View>
+
+                  <TextInput
+                    value={paymentCode}
+                    onChangeText={onCodeChange}
+                    placeholder="123456789"
+                    placeholderTextColor="#999"
+                    style={[
+                      styles.input,
+                      { color: textColor, backgroundColor: inputBg },
+                    ]}
+                  />
+
+                  <TouchableOpacity
+                    onPress={handlePaste}
+                    style={styles.iconButton}
+                  >
+                    <Feather name="clipboard" size={20} color="#007AFF" />
+                  </TouchableOpacity>
+                </View>
+              </>
             )}
 
             {/* Actions */}
@@ -190,8 +202,6 @@ export const NewBeneficiaryModal = ({ onSelectRecipient }: Props) => {
             )}
           </View>
         </TouchableWithoutFeedback>
-
-        
       </KeyboardAvoidingView>
 
       {/* QR Scanner */}

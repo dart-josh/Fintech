@@ -8,7 +8,6 @@ import {
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 
@@ -33,20 +32,20 @@ export default function PasswordSuccessPage() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <View style={{ flex: 1 }} />
-        <View
+        {/* <View
           style={[
             styles.iconBubble,
             { backgroundColor: colors.primary + "22" },
           ]}
         >
           <Feather name="shield" size={26} color={colors.primary} />
-        </View>
+        </View> */}
       </View>
 
       {/* Content */}
       <View style={styles.content}>
         <ImageBackground
-          source={require("@/assets/images/partial-react-logo.png")} // optional decorative image
+          source={require("@/assets/images/password-success.png")} // optional decorative image
           style={styles.image}
           resizeMode="contain"
         />

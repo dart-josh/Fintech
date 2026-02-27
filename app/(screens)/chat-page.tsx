@@ -15,7 +15,7 @@ import {
   LayoutAnimation,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { Ionicons } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -298,7 +298,7 @@ export default function ChatPage() {
           multiline
         />
         <TouchableOpacity onPress={sendMessage} style={styles.sendButton}>
-          <Ionicons name="send" size={24} color="#fff" />
+          <Feather name="send" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     backgroundColor: "#3B82F6",
-    padding: 12,
+    padding: 10,
     borderRadius: 24,
     marginLeft: 8,
   },

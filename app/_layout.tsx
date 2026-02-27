@@ -13,6 +13,8 @@ import { fetchEscrows } from "@/services/escrow.service";
 import messaging from "@react-native-firebase/messaging";
 import { Platform } from "react-native";
 import NotificationBanner from "@/components/NotificationBanner";
+import PinModal from "@/components/PinModal";
+import { useConfirmPinHook } from "@/hooks/pinVerification.hook";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -24,6 +26,8 @@ export default function RootLayout() {
   } | null>(null);
 
   const { user } = useUserStore();
+
+  const {visible, onClose, error, isLoading, onConfirm} = useConfirmPinHook();
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -140,6 +144,14 @@ export default function RootLayout() {
             onClose={() => setShowBanner(false)}
           />
         )}
+
+        <PinModal
+          visible={visible}
+          onClose={onClose}
+          onComplete={onConfirm}
+          error={error ?? ""}
+          isLoading={isLoading}
+        />
         {/* </SafeAreaView> */}
       </SafeAreaProvider>
     </ThemeProvider>

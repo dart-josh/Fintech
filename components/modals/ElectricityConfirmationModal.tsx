@@ -5,48 +5,53 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
-import { formatNumberSpace } from "@/hooks/format.hook";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type PaymentModalProps = {
+type ElectricityConfirmationModalProps = {
   visible: boolean;
   onClose: () => void;
-  type: "airtime" | "data";
   amount: number;
-  networkLogo?: any;
-  recipient: string;
-  dataBundle?: string;
+  providerName: string;
+  providerLogo?: any;
+  meterNumber: string;
+  customerName: string;
   userBalance: string;
   onPay: () => void;
 };
 
-export default function PaymentModal({
+export default function ElectricityConfirmationModal({
   visible,
   onClose,
-  type,
   amount,
-  networkLogo,
-  recipient,
-  dataBundle,
+  providerName,
+  providerLogo,
+  meterNumber,
+  customerName,
   userBalance,
   onPay,
-}: PaymentModalProps) {
+}: ElectricityConfirmationModalProps) {
   const { colors, theme } = useTheme();
   const isDark = theme === "dark";
+  const insets = useSafeAreaInsets();
 
   const numericBalance = Number(userBalance.replace(/,/g, ""));
   const isInsufficient = numericBalance < amount;
 
-  const insets = useSafeAreaInsets();
-
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.card, paddingBottom: insets.bottom + 10 }]}>
+        <View
+          style={[
+            styles.modal,
+            {
+              backgroundColor: colors.card,
+              paddingBottom: insets.bottom + 10,
+            },
+          ]}
+        >
           {/* Close */}
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
             <Feather name="x" size={22} color={colors.text} />
@@ -57,25 +62,26 @@ export default function PaymentModal({
             ₦{amount.toLocaleString()}
           </Text>
 
+          <Text style={[styles.confirmText, { color: colors.muted }]}>
+            Confirm Electricity Top Up
+          </Text>
+
           {/* Details */}
           <View style={styles.section}>
             <InfoRow
-              label="Product"
-              value={type === "airtime" ? "Airtime" : "Data"}
-              logo={networkLogo}
+              label="Provider"
+              value={providerName}
+              logo={providerLogo}
               colors={colors}
             />
+
+            <InfoRow label="Meter Number" value={meterNumber} colors={colors} />
 
             <InfoRow
-              label="Recipient Mobile"
-              value={recipient}
+              label="Customer Name"
+              value={customerName}
               colors={colors}
-              isNumber
             />
-
-            {type === "data" && dataBundle && (
-              <InfoRow label="Data Bundle" value={dataBundle} colors={colors} />
-            )}
 
             <InfoRow
               label="Amount"
@@ -89,7 +95,7 @@ export default function PaymentModal({
             style={[styles.dashedDivider, { borderColor: colors.border }]}
           />
 
-          {/* Payment method */}
+          {/* Payment Section */}
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Payment Method
           </Text>
@@ -106,12 +112,9 @@ export default function PaymentModal({
           >
             <View style={styles.paymentRow}>
               <View style={{ flex: 1 }}>
-                <View style={styles.balanceRow}>
-                  <Text style={{ color: colors.text, fontWeight: "600" }}>
-                    Available Balance
-                  </Text>
-                  <Feather name="info" size={14} color={colors.muted} />
-                </View>
+                <Text style={{ color: colors.text, fontWeight: "600" }}>
+                  Available Balance
+                </Text>
 
                 <Text style={{ color: colors.muted, marginTop: 4 }}>
                   ₦{numericBalance.toLocaleString()}
@@ -132,7 +135,7 @@ export default function PaymentModal({
             </View>
           </View>
 
-          {/* Pay button */}
+          {/* Pay Button */}
           <TouchableOpacity
             disabled={isInsufficient}
             style={[
@@ -145,7 +148,7 @@ export default function PaymentModal({
             onPress={onPay}
           >
             <Text style={styles.payText}>
-              {isInsufficient ? "Insufficient Balance" : "Pay"}
+              {isInsufficient ? "Insufficient Balance" : "Confirm & Pay"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -161,33 +164,17 @@ const InfoRow = ({
   value,
   logo,
   colors,
-  isNumber = false,
 }: {
   label: string;
-  value: string | number;
+  value: string;
   logo?: any;
   colors: any;
-  isNumber?: boolean;
 }) => {
-  const displayValue = isNumber ? formatNumberSpace(value) : value;
-
   return (
     <View style={styles.infoRow}>
-      <Text style={{ color: colors.muted }}>{label}</Text>
+      <Text style={[styles.infoLabel, { color: colors.muted }]}>{label}</Text>
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        {logo && <View style={styles.networkLogo}>
-          <Image
-            source={logo}
-            style={styles.networkLogo}
-            resizeMode="contain"
-          />
-        </View>}
-
-        <Text style={{ color: colors.text, fontWeight: "500" }}>
-          {displayValue}
-        </Text>
-      </View>
+      <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
     </View>
   );
 };
@@ -212,24 +199,45 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "700",
     textAlign: "center",
-    marginVertical: 12,
+    marginTop: 10,
+  },
+  confirmText: {
+    textAlign: "center",
+    marginTop: 4,
+    fontSize: 13,
   },
   section: {
     gap: 14,
-    marginVertical: 8,
+    marginVertical: 16,
   },
-  networkLogo: {
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start", // allow multi-line alignment
+  },
+
+  infoLabel: {
+    flex: 1,
+  },
+
+  infoValue: {
+    flex: 1,
+    fontWeight: "500",
+    textAlign: "right", // keep right aligned
+    flexWrap: "wrap",
+  },
+  logoWrapper: {
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: "#EEE",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
   },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  logoImage: {
+    width: "100%",
+    height: "100%",
   },
   dashedDivider: {
     borderWidth: 1,
@@ -248,11 +256,6 @@ const styles = StyleSheet.create({
   paymentRow: {
     flexDirection: "row",
     alignItems: "center",
-  },
-  balanceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
   },
   insufficientText: {
     color: "#EF4444",

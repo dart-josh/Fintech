@@ -593,16 +593,16 @@ const QuickActions = ({ isDark, setModalVisible }: any) => {
 
   const actions = [
     {
-      label: "Airtime",
-      icon: <Feather name="phone" size={24} color="#4B7BEC" />, // phone icon for airtime
+      label: "Top Up",
+      icon: <Feather name="smartphone" size={24} color="#4B7BEC" />, // phone icon for airtime
       color: "#4B7BEC",
-      route: "airtime-top-up",
+      route: "mobile-top-up",
     },
     {
-      label: "Data",
-      icon: <Feather name="wifi" size={24} color="#00C896" />, // wifi icon for data
+      label: "Pay Bills",
+      icon: <Feather name="zap" size={24} color="#00C896" />, // wifi icon for data
       color: "#00C896",
-      route: "data-top-up",
+      route: "bill-payment",
     },
     {
       label: "Add Money",

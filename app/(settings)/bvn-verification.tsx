@@ -65,7 +65,7 @@ export default function BVNVerificationFlow() {
         {step === "intro" && (
           <View style={styles.center}>
             <Image
-              source={require("@/assets/images/partial-react-logo.png")}
+              source={require("@/assets/images/bvn.png")}
               style={styles.image}
               resizeMode="contain"
             />

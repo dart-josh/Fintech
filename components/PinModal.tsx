@@ -1,11 +1,5 @@
-import React, { useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import React, { useEffect, useState } from "react";
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +10,7 @@ type PinModalProps = {
   onClose: () => void;
   onComplete: (pin: string) => void;
   error?: string;
-  isLoading: boolean
+  isLoading: boolean;
 };
 
 const PIN_LENGTH = 6;
@@ -43,6 +37,10 @@ export default function PinModal({
     }
   };
 
+  useEffect(() => {
+    if (!visible) setPin("");
+  }, [visible]);
+
   const handleDelete = () => {
     setPin(pin.slice(0, -1));
   };
@@ -50,7 +48,12 @@ export default function PinModal({
   return (
     <Modal transparent visible={visible} animationType="slide">
       <View style={styles.overlay}>
-        <View style={[styles.modal, { backgroundColor: colors.card, paddingBottom: insets.bottom + 12  }]}>
+        <View
+          style={[
+            styles.modal,
+            { backgroundColor: colors.card, paddingBottom: insets.bottom + 12 },
+          ]}
+        >
           {/* Drag handle */}
           <View style={styles.handle} />
 
@@ -92,37 +95,39 @@ export default function PinModal({
 
           {/* Keypad */}
           <View style={styles.keypad}>
-            {["1","2","3","4","5","6","7","8","9","", "0", "del"].map((key) => {
-              if (key === "") return <View key="empty" style={styles.key} />;
+            {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "del"].map(
+              (key) => {
+                if (key === "") return <View key="empty" style={styles.key} />;
 
-              if (key === "del") {
+                if (key === "del") {
+                  return (
+                    <TouchableOpacity
+                      key="del"
+                      style={styles.key}
+                      onPress={handleDelete}
+                    >
+                      <Feather name="delete" size={20} color={colors.text} />
+                    </TouchableOpacity>
+                  );
+                }
+
                 return (
                   <TouchableOpacity
-                    key="del"
+                    key={key}
                     style={styles.key}
-                    onPress={handleDelete}
+                    onPress={() => handlePress(key)}
                   >
-                    <Feather name="delete" size={20} color={colors.text} />
+                    <Text style={[styles.keyText, { color: colors.text }]}>
+                      {key}
+                    </Text>
                   </TouchableOpacity>
                 );
-              }
-
-              return (
-                <TouchableOpacity
-                  key={key}
-                  style={styles.key}
-                  onPress={() => handlePress(key)}
-                >
-                  <Text style={[styles.keyText, { color: colors.text }]}>
-                    {key}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+              },
+            )}
           </View>
         </View>
 
-        {isLoading && <LoadingOverlay/>}
+        {isLoading && <LoadingOverlay />}
       </View>
     </Modal>
   );

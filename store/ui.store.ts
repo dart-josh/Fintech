@@ -19,10 +19,12 @@ type UIState = {
   loadingText?: string;
   showBalance: boolean;
   useBiometrics: boolean;
+  requirePin: boolean;
 
   showLoading: (text?: string) => void;
   hideLoading: () => void;
   toggleShowBalance: (showBalance: boolean) => void;
+  toggleRequirePin: (requirePin: boolean) => void;
   toggleUseBiometrics: (useBiometrics: boolean) => void;
 };
 
@@ -31,6 +33,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   loadingText: undefined,
   showBalance: true,
   useBiometrics: false,
+  requirePin: true,
 
   showLoading: (text) =>
     set({
@@ -49,6 +52,11 @@ export const useUIStore = create<UIState>((set, get) => ({
     setShowBalance(showBalance);
   },
 
+  toggleRequirePin: (requirePin) => {
+    set({requirePin});
+    setRequirePin(requirePin);
+  },
+
   toggleUseBiometrics: async (useBiometrics) => {
     set({ useBiometrics: useBiometrics });
     setUseBiometrics(useBiometrics);
@@ -64,6 +72,10 @@ const setUseBiometrics = async (useBiometrics: boolean) => {
     "useBiometrics",
     useBiometrics ? "true" : "false",
   );
+};
+
+const setRequirePin = async (requirePin: boolean) => {
+  await SecureStore.setItemAsync("requirePin", requirePin ? "true" : "false");
 };
 
 export const enableBiometrics = async (enabled: boolean): Promise<boolean> => {

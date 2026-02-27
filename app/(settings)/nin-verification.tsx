@@ -61,7 +61,7 @@ export default function NINVerificationFlow() {
         {step === "intro" && (
           <View style={styles.center}>
             <Image
-              source={require("@/assets/images/partial-react-logo.png")}
+              source={require("@/assets/images/nin.png")}
               style={styles.image}
               resizeMode="contain"
             />

@@ -24,7 +24,7 @@ export default function SetPinIntro() {
 
       <View style={styles.center}>
         <Image
-          source={require("@/assets/images/partial-react-logo.png")}
+          source={require("@/assets/images/set-pin.png")}
           style={styles.image}
           resizeMode="contain"
         />

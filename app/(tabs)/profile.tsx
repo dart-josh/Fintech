@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Linking,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "@/theme/ThemeContext";
@@ -89,7 +88,7 @@ export default function ProfileScreen() {
             },
             // { label: "Device Management", icon: "smartphone", route: "" },
             { label: "How to Use", icon: "info", route: "how-to-use-screen" },
-            { label: "Contact Us", icon: "help-circle", route: "chat-page" },
+            { label: "Contact Us", icon: "help-circle", route: "support-page" },
             { label: "Terms & Conditions", icon: "file", route: "terms" },
             { label: "Visit Our Website", icon: "globe", route: "site" },
             { label: "Logout", icon: "log-out", danger: true, route: "logout" },

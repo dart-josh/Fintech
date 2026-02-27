@@ -269,7 +269,7 @@ export default function WithdrawScreen() {
         >
           {[
             {
-              title: userBalance,
+              title: `₦${userBalance}`,
               label: "Current Balance",
               icon: "credit-card",
               color: "#4CAF50",
@@ -288,6 +288,7 @@ export default function WithdrawScreen() {
                 backgroundColor: colors.card,
                 borderRadius: 16,
                 padding: 14,
+                paddingRight: 50,
               }}
             >
               <Text

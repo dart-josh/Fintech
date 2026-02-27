@@ -22,6 +22,31 @@ export const walletApi = {
     network: string;
   }) => client.post("/api/wallet/data_purchase", data),
 
+  purchaseCableTv: (data: {
+    userId: string;
+    provider: string;
+    number: string;
+    customer: string;
+    package: string;
+    amount: number;
+  }) => client.post("/api/wallet/tv_purchase", data),
+
+  purchaseElectricity: (data: {
+    userId: string;
+    provider: string;
+    number: string;
+    customer: string;
+    amount: number;
+  }) => client.post("/api/wallet/electricity_purchase", data),
+
+  purchaseBetting: (data: {
+    userId: string;
+    provider: string;
+    number: string;
+    customer: string;
+    amount: number;
+  }) => client.post("/api/wallet/betting_purchase", data),
+
   lookUpNumber: (data: { phone: string }) =>
     client.post("/api/wallet/lookup_number", data),
 

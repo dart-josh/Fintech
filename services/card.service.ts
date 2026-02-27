@@ -10,14 +10,14 @@ export async function requestCard(data: {
   address: string;
   phone: string;
   email: string;
-}): Promise<boolean> {
+}): Promise<{success: boolean, error?: string}> {
   try {
     const res = await cardApi.requestCard(data);
 
-    if (!res.status) return false;
-    return true;
+    if (!res.status) return {success: false, error: "We couldn’t process your card request at this time."};
+    return {success: true};
   } catch (error: any) {
     toast.show({ message: error.message, type: "error" });
-    return false;
+    return {success: false, error: error.message};
   }
 }

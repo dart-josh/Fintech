@@ -21,6 +21,9 @@ export default function SplashScreen() {
 
   const [altRoute, setAltRoute] = useState("");
 
+  const { toggleShowBalance, toggleUseBiometrics, toggleRequirePin } =
+    useUIStore();
+
   useEffect(() => {
     const getUser = async () => {
       const { setUserId } = useRegisterStore.getState();
@@ -44,8 +47,16 @@ export default function SplashScreen() {
         if (!user.login_pin) {
           setAltRoute("/create-pin");
         } else {
-          // check biometric
-          setAltRoute("/enter-pin");
+          const value = await SecureStore.getItemAsync("requirePin");
+          const requirePin = value ? value === "true" : true;
+          toggleRequirePin(requirePin);
+
+          if (requirePin) {
+            // check biometric
+            setAltRoute("/enter-pin");
+          } else {
+            setAltRoute("/home");
+          }
         }
       }
     };
@@ -53,7 +64,6 @@ export default function SplashScreen() {
     getUser();
   }, []);
 
-  const {toggleShowBalance, toggleUseBiometrics} = useUIStore();
   useEffect(() => {
     const getAppPreference = async () => {
       const value = await SecureStore.getItemAsync("showBalance");
@@ -61,7 +71,7 @@ export default function SplashScreen() {
       toggleShowBalance(!showBalance);
 
       const value_2 = await SecureStore.getItemAsync("useBiometrics");
-      
+
       const useBiometrics = value_2 === "true";
       toggleUseBiometrics(useBiometrics);
     };

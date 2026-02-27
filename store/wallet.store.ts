@@ -27,6 +27,9 @@ export type WalletDetails = {
   transactions: Transaction[];
   airtimeTransactions: Transaction[];
   dataTransactions: Transaction[];
+  cableTVTransactions: Transaction[];
+  electricityTransactions: Transaction[];
+  bettingTransactions: Transaction[];
   withdrawTransactions: Transaction[];
   topUpTransactions: Transaction[];
 };

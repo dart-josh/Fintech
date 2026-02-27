@@ -2,12 +2,9 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,8 +12,8 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
 import { requestCard } from "@/services/card.service";
-import { useToastStore } from "@/store/toast.store";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import CardApplicationStatusDialog from "@/components/CardApplicationStatusDialog";
 
 export default function CardApplication() {
   const router = useRouter();
@@ -32,14 +29,84 @@ export default function CardApplication() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
 
-  const isNotValid = !fullName || !dob || !address || !phone || !email;
-  const toast = useToastStore.getState();
+  const [error, setError] = useState("");
+
+  const isNotValid =
+    !fullName || !dob || !address || !phone || !email || error !== "";
+
+  const [showStatus, setShowStatus] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<
+    "success" | "failed" | "waitlist"
+  >("waitlist");
+  const [cardError, setCardError] = useState("");
+
+  const formatAndValidateDOB = (value: string) => {
+    // Remove non-numbers & limit to 8 digits (YYYYMMDD)
+    const cleaned = value.replace(/\D/g, "").slice(0, 8);
+
+    let year = cleaned.slice(0, 4);
+    let month = cleaned.slice(4, 6);
+    let day = cleaned.slice(6, 8);
+
+    const currentYear = new Date().getFullYear();
+
+    // Partial validation while typing
+
+    if (year.length === 4) {
+      const yearNum = parseInt(year, 10);
+      if (yearNum > currentYear) year = String(currentYear);
+      if (yearNum < 1900) year = "1900";
+    }
+
+    if (month.length === 2) {
+      const monthNum = parseInt(month, 10);
+      if (monthNum > 12) month = "12";
+      if (monthNum === 0) month = "01";
+    }
+
+    if (day.length === 2) {
+      const dayNum = parseInt(day, 10);
+      if (dayNum > 31) day = "31";
+      if (dayNum === 0) day = "01";
+    }
+
+    // Build formatted string
+    let formatted = year;
+    if (month) formatted += "-" + month;
+    if (day) formatted += "-" + day;
+
+    // Full validation only when complete
+    if (cleaned.length === 8) {
+      const yearNum = parseInt(year, 10);
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+
+      const date = new Date(yearNum, monthNum - 1, dayNum);
+
+      const isValidDate =
+        date.getFullYear() === yearNum &&
+        date.getMonth() === monthNum - 1 &&
+        date.getDate() === dayNum;
+
+      if (!isValidDate) {
+        setError("Invalid date");
+      } else if (date > new Date()) {
+        setError("Date cannot be in the future");
+      } else {
+        setError("");
+      }
+    } else {
+      setError("");
+    }
+
+    return formatted;
+  };
 
   const handleSubmit = async () => {
     // Here you can handle form validation and submission
     if (isNotValid) return;
 
-    const res = await requestCard({
+    const { success: res, error } = await requestCard({
       full_name: fullName,
       dob,
       address,
@@ -48,10 +115,11 @@ export default function CardApplication() {
       userId: user?.id ?? "",
     });
 
-    if (!res) return;
+    setApplicationStatus(!res ? "failed" : "waitlist");
+    if (error) setCardError(error);
+    setShowStatus(true);
 
-    router.back();
-    toast.show({ message: "Card request submitted", type: "success" });
+    // toast.show({ message: "Card request submitted", type: "success" });
   };
 
   return (
@@ -127,13 +195,25 @@ export default function CardApplication() {
                 {
                   backgroundColor: isDark ? "#1E1E1E" : "#F4F5F7",
                   color: colors.text,
+                  borderColor: error ? "#DC2626" : "transparent",
+                  borderWidth: error ? 1 : 0,
                 },
               ]}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={isDark ? "#888" : "#AAA"}
+              keyboardType="number-pad"
               value={dob}
-              onChangeText={setDob}
+              maxLength={10}
+              onChangeText={(text) => {
+                const formatted = formatAndValidateDOB(text);
+                setDob(formatted);
+              }}
             />
+            {error ? (
+              <Text style={{ color: "#DC2626", marginTop: 6, fontSize: 12 }}>
+                {error}
+              </Text>
+            ) : null}
           </View>
 
           <View style={styles.inputGroup}>
@@ -210,6 +290,16 @@ export default function CardApplication() {
           </TouchableOpacity>
         </View>
       </KeyboardAwareScrollView>
+
+      <CardApplicationStatusDialog
+        visible={showStatus}
+        status={applicationStatus}
+        error={cardError}
+        onClose={() => {
+          setShowStatus(false);
+          router.back();
+        }}
+      />
     </View>
   );
 }

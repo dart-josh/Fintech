@@ -21,8 +21,14 @@ export default function SecurityScreen() {
   const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
-  const { showBalance, toggleShowBalance, useBiometrics, toggleUseBiometrics } =
-    useUIStore();
+  const {
+    showBalance,
+    toggleShowBalance,
+    useBiometrics,
+    toggleUseBiometrics,
+    requirePin,
+    toggleRequirePin,
+  } = useUIStore();
 
   const { user } = useUserStore();
 
@@ -48,12 +54,39 @@ export default function SecurityScreen() {
       mode: "transaction",
     },
     {
-      label: "Use Face ID / Fingerprint",
-      icon: "smartphone",
+      label: "Require PIN to login",
+      icon: "lock",
       route: "",
       switch: true,
+      value: requirePin,
+      fn: (val: boolean) => {
+        toggleRequirePin(val);
+      },
     },
-    { label: "Show Balance", icon: "eye", route: "", switch: true },
+    requirePin
+      ? {
+          label: "Use Face ID / Fingerprint",
+          icon: "smartphone",
+          route: "",
+          switch: true,
+          value: useBiometrics,
+          fn: async (val: boolean) => {
+            toggleUseBiometrics(val);
+            const bio = await enableBiometrics(val);
+            toggleUseBiometrics(bio);
+          },
+        }
+      : undefined,
+    {
+      label: "Show Balance",
+      icon: "eye",
+      route: "",
+      switch: true,
+      value: showBalance,
+      fn: (val: boolean) => {
+        toggleShowBalance(val);
+      },
+    },
   ];
 
   return (
@@ -94,100 +127,93 @@ export default function SecurityScreen() {
             { backgroundColor: isDark ? colors.card : "#FFFFFF" },
           ]}
         >
-          {securityItems.map((item, index) => (
-            <View key={item.label}>
-              <TouchableOpacity
-                style={styles.row}
-                activeOpacity={item.switch ? 1 : 0.7}
-                onPress={() => {
-                  if (item.route) {
-                    if (item.route === "/change-password") {
-                      sendEmailCode(user?.email ?? "");
-                      router.push({
-                        pathname: "/verify-otp",
-                        params: {
-                          flow: "change-password",
-                          target: user?.email ?? "",
-                          mode: item.mode,
-                        },
-                      });
-                    } else if (item.route === "/change-pin") {
-                      sendEmailCode(user?.email ?? "");
-                      router.push({
-                        pathname: "/verify-otp",
-                        params: {
-                          flow: "change-pin",
-                          target: user?.email ?? "",
-                          mode: item.mode,
-                        },
-                      });
-                    } else router.push(item.route);
-                  }
-                }}
-              >
-                {/* ICON */}
-                <View
-                  style={[
-                    styles.iconBox,
-                    { backgroundColor: `${colors.primary}15` },
-                  ]}
-                >
-                  <Feather
-                    name={item.icon as any}
-                    size={18}
-                    color={colors.primary}
-                  />
-                </View>
-
-                {/* LABEL */}
-                <Text
-                  style={[
-                    styles.label,
-                    { color: isDark ? colors.text : "#111" },
-                  ]}
-                >
-                  {item.label}
-                </Text>
-
-                {/* SWITCH OR ARROW */}
-                {item.switch ? (
-                  <Switch
-                    value={
-                      item.label === "Use Face ID / Fingerprint"
-                        ? useBiometrics
-                        : showBalance
+          {securityItems.map((item, index) => {
+            if (!item) return null;
+            return (
+              <View key={item.label}>
+                <TouchableOpacity
+                  style={styles.row}
+                  activeOpacity={item.switch ? 1 : 0.7}
+                  onPress={() => {
+                    if (item.route) {
+                      if (item.route === "/change-password") {
+                        sendEmailCode(user?.email ?? "");
+                        router.push({
+                          pathname: "/verify-otp",
+                          params: {
+                            flow: "change-password",
+                            target: user?.email ?? "",
+                            mode: item.mode,
+                          },
+                        });
+                      } else if (item.route === "/change-pin") {
+                        sendEmailCode(user?.email ?? "");
+                        router.push({
+                          pathname: "/verify-otp",
+                          params: {
+                            flow: "change-pin",
+                            target: user?.email ?? "",
+                            mode: item.mode,
+                          },
+                        });
+                      } else router.push(item.route);
                     }
-                    onValueChange={async (val) => {
-                      if (item.label === "Use Face ID / Fingerprint") {
-                        toggleUseBiometrics(val);
-                        const bio = await enableBiometrics(val);
-                        toggleUseBiometrics(bio);
-                      } else toggleShowBalance(val);
-                    }}
-                    trackColor={{
-                      true: colors.primary,
-                      false: isDark ? "#555" : "#ccc",
-                    }}
-                    thumbColor={isDark ? "#fff" : "#fff"}
-                  />
-                ) : (
-                  <Feather
-                    name="chevron-right"
-                    size={16}
-                    color={colors.textMuted}
-                    style={{ marginLeft: 6 }}
+                  }}
+                >
+                  {/* ICON */}
+                  <View
+                    style={[
+                      styles.iconBox,
+                      { backgroundColor: `${colors.primary}15` },
+                    ]}
+                  >
+                    <Feather
+                      name={item.icon as any}
+                      size={18}
+                      color={colors.primary}
+                    />
+                  </View>
+
+                  {/* LABEL */}
+                  <Text
+                    style={[
+                      styles.label,
+                      { color: isDark ? colors.text : "#111" },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+
+                  {/* SWITCH OR ARROW */}
+                  {item.switch ? (
+                    <Switch
+                      value={item.value}
+                      onValueChange={item.fn}
+                      trackColor={{
+                        true: colors.primary,
+                        false: isDark ? "#555" : "#ccc",
+                      }}
+                      thumbColor={isDark ? "#fff" : "#fff"}
+                    />
+                  ) : (
+                    <Feather
+                      name="chevron-right"
+                      size={16}
+                      color={colors.textMuted}
+                      style={{ marginLeft: 6 }}
+                    />
+                  )}
+                </TouchableOpacity>
+
+                {/* DIVIDER */}
+                {index < securityItems.length - 1 && (
+                  <View
+                    style={[styles.divider, { backgroundColor: colors.border }]}
                   />
                 )}
-              </TouchableOpacity>
-
-              {/* DIVIDER */}
-              {index < securityItems.length - 1 && (
-                <View
-                  style={[styles.divider, { backgroundColor: colors.border }]}
-                />
-              )}
-            </View>
-          ))}
+              </View>
+            );
+          })}
         </View>
       </ScrollView>
     </View>

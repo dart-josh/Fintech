@@ -15,6 +15,8 @@ import { useRouter } from "expo-router";
 import NoNotifications from "@/components/NoNotification";
 import { useUserStore } from "@/store/user.store";
 import { markAsRead } from "@/services/notification.service";
+import { formatCurrentDate } from "@/hooks/format.hook";
+import { useConfirmStore } from "@/store/confirmation.store";
 
 /* ======================================================
    NOTIFICATIONS PAGE
@@ -38,6 +40,27 @@ export default function NotificationsPage() {
     if (!is_read) markAsRead(id);
   };
 
+  const confirm = useConfirmStore((state) => state.confirm);
+
+  const unread = notifications.filter((p) => !p.is_read);
+
+  const readAll = async () => {
+    const confirmed = await confirm({
+      title: "Mark all as read",
+      subtitle: "You're about to mark all notifications as read.",
+      confirmText: "Confirm",
+      icon: <Ionicons name="mail" size={28} color="#22c55e" />,
+    });
+    if (confirmed) {
+      
+
+      for (let index = 0; index < unread.length; index++) {
+        const element = unread[index];
+        toggleRead(element.id, element.is_read);
+      }
+    }
+  };
+
   const renderNotification = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.notificationCard, { backgroundColor: colors.card }]}
@@ -51,7 +74,7 @@ export default function NotificationsPage() {
         <Text
           style={{
             fontSize: 16,
-            fontWeight: item.is_read ? "400" : "700",
+            fontWeight: item.is_read ? "400" : "800",
             color: colors.textPrimary,
           }}
         >
@@ -68,16 +91,16 @@ export default function NotificationsPage() {
         </Text>
       </View>
 
-      <TouchableOpacity
+      {!item.is_read && <TouchableOpacity
         onPress={() => toggleRead(item.id, item.is_read)}
         style={styles.readIconWrapper}
       >
         <Ionicons
-          name={item.is_read ? "mail-open-outline" : "mail-outline"}
+          name={item.is_read ? "mail-open-outline" : "mail"}
           size={22}
           color={colors.primary}
         />
-      </TouchableOpacity>
+      </TouchableOpacity>}
     </TouchableOpacity>
   );
 
@@ -103,6 +126,9 @@ export default function NotificationsPage() {
         <Text style={[styles.title, { color: colors.textPrimary }]}>
           Notifications
         </Text>
+        {unread.length !== 0 && <TouchableOpacity onPress={readAll} style={{marginLeft: "auto"}}>
+          <Ionicons name="mail" size={25} color="#22c55e" />
+        </TouchableOpacity>}
       </View>
 
       {/* Notifications List */}
@@ -140,6 +166,16 @@ export default function NotificationsPage() {
           </Text>
           <Text style={{ color: colors.textSecondary, fontSize: 14 }}>
             {selectedNotification?.message}
+          </Text>
+          <Text
+            style={{
+              fontSize: 13,
+              color: colors.textSecondary,
+              marginTop: 10,
+              fontWeight: "500",
+            }}
+          >
+            {formatCurrentDate(selectedNotification?.created_at)}
           </Text>
         </View>
       </Modal>

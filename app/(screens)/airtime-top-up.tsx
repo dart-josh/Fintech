@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NETWORKS } from "@/utils/globalVariables";
 import NetworkSelector from "@/components/NetworkSelector";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import PaymentModal from "@/components/PaymentModal";
+import MobileTopUpConfirmation from "@/components/modals/MobileTopUpConfirmation";
 import { formatNumberSpace } from "@/hooks/format.hook";
 import { useRouter } from "expo-router";
 import PinModal from "@/components/PinModal";
@@ -274,7 +274,7 @@ export default function AirtimeTopUp() {
       />
 
       {/* ================= PAYMENT MODAL ================= */}
-      <PaymentModal
+      <MobileTopUpConfirmation
         visible={payModal}
         onClose={() => setPayModal(false)}
         type="airtime"

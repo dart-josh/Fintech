@@ -98,7 +98,7 @@ export default function AddressVerificationFlow() {
         {step === "intro" && (
           <View style={styles.center}>
             <Image
-              source={require("@/assets/images/partial-react-logo.png")}
+              source={require("@/assets/images/address.png")}
               style={styles.image}
               resizeMode="contain"
             />

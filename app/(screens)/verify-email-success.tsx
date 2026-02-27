@@ -63,7 +63,7 @@ export default function SuccessPage() {
       <View style={styles.content}>
         {/* Background Image */}
         <ImageBackground
-          source={require("@/assets/images/partial-react-logo.png")} // Replace with your image path
+          source={require("@/assets/images/email-success.png")} // Replace with your image path
           style={styles.imageBackground}
           resizeMode="contain"
         />

@@ -1,719 +1,427 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
   TextInput,
-  FlatList,
-  ScrollView,
-  Dimensions,
-  Vibration,
-  Image,
+  ActivityIndicator,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "@/theme/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "@/theme/ThemeContext";
+import { useRouter } from "expo-router";
+import ProviderBottomSheet, { Provider } from "@/components/ProviderSelector";
 import {
   airtel_bundles,
-  glo_bundles,
   mtn_bundles,
-  tmobile_bundles,
   TV_PROVIDERS,
 } from "@/utils/globalVariables";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import PaymentModal from "@/components/PaymentModal";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useUserStore } from "@/store/user.store";
+import PackageBottomSheet, { Package } from "@/components/PackageSelector";
+import CableTvConfirmationModal from "@/components/modals/CableTvConfirmationModal";
 import { useWalletStore } from "@/store/wallet.store";
-import { useToastStore } from "@/store/toast.store";
-import { verifyTxPin } from "@/services/auth.service";
-import { fetchUser } from "@/services/user.service";
-import { lookUpNumber, purchaseData } from "@/services/wallet.service";
-import PinModal from "@/components/PinModal";
-import ProviderSelector from "@/components/ProviderSelector";
+import { useConfirmPinHook } from "@/hooks/pinVerification.hook";
+import { purchaseCableTv } from "@/services/wallet.service";
+import { useUserStore } from "@/store/user.store";
 
-export default function TvSubscription() {
-  const { providerKey } = useLocalSearchParams<{
-    providerKey: string;
-  }>();
+const getPlan = (provider: string) => {
+  switch (provider.toLowerCase()) {
+    case "mtn":
+      return mtn_bundles;
+    case "airtel":
+      return airtel_bundles;
+    default:
+      return mtn_bundles;
+  }
+};
 
-  const getProvider = () => {
-    const index = TV_PROVIDERS.findIndex((p) => p.key === providerKey);
-    return index ?? 0;
-  };
-
+export default function CableTvScreen() {
   const router = useRouter();
-  const { theme, colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const { theme, colors } = useTheme();
   const isDark = theme === "dark";
 
-  const { user } = useUserStore.getState();
-
-  const [provider, setProvider] = useState(TV_PROVIDERS[getProvider()]);
-  const [providerModal, setProviderModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Bundle | null>(null);
-  const [number, setNumber] = useState("");
-  const [accountDetails, setAccountDetails] = useState("");
-  const [accountError, setAccountError] = useState("");
-
-  const [payModal, setPayModal] = useState(false);
-
-  const [pinVisible, setPinVisible] = useState(false);
-  const [pinError, setPinError] = useState("");
-  const [loading, setLoading] = useState(false);
-
+  const { user } = useUserStore();
   const { wallet } = useWalletStore();
-  const userBalance = wallet?.balance ?? "";
 
-  const toast = useToastStore.getState();
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [smartcard, setSmartcard] = useState("");
+  const [customerName, setCustomerName] = useState<string | null>(null);
+  const [loadingName, setLoadingName] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [showProviderSheet, setShowProviderSheet] = useState(false);
+  const [showPackageSheet, setShowPackageSheet] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const getAccountDetails = async () => {
-    setLoading(true);
-    setAccountError("");
-    const account = await lookUpNumber({ phone: number });
-    setLoading(false);
-    if (account) {
-      setAccountDetails(account);
-    } else {
-      setAccountError("Account does not exist. Please check and re-enter");
-    }
+  /* Simulated Fetch */
+  const fetchSmartcardName = async (value: string) => {
+    setSmartcard(value);
+    setCustomerName(null);
+    setError(null);
+
+    if (value.length < 6) return;
+
+    setLoadingName(true);
+
+    setTimeout(() => {
+      setLoadingName(false);
+
+      if (value === "12345678") {
+        setCustomerName(user?.fullname ?? "JOHN DOE");
+      } else {
+        setError(provider?.key === "showmax" ? "Recipient number not found" : "Smartcard number not found");
+      }
+    }, 1500);
   };
 
-  const handleConfirmPayment = () => {
-    setPayModal(false);
-    if (user?.transaction_pin) {
-      setPinVisible(true);
-    } else {
-      toast.show({ type: "warning", message: "Transaction PIN Not set" });
-      router.push("/set-pin-intro");
-    }
+  const canProceed = provider && customerName && selectedPackage;
+
+  const handleProceed = () => {
+    setShowConfirmModal(true);
   };
+  const handlePay = async () => {
+    const { confirmPin } = useConfirmPinHook.getState();
 
-  const verifyPin = async (pin: string): Promise<boolean> => {
-    const valid = await verifyTxPin({ userId: user?.id ?? "", pin });
-    return valid;
-  };
-
-  //!
-  const handlePinComplete = async (pin: string) => {
-    setIsLoading(true);
-    setPinError("");
-    const pinValid = await verifyPin(pin);
-
-    if (!pinValid) {
-      setIsLoading(false);
-      setPinError("Invalid PIN");
-      Vibration.vibrate(200);
-      return;
-    }
-
-    if (loading) return;
-    setLoading(true);
-
-    try {
-      const res = await purchaseData({
+    setShowConfirmModal(false);
+    confirmPin(async () => {
+      const res = await purchaseCableTv({
         userId: user?.id ?? "",
-        amount: selectedPlan?.amount ?? 0,
-        phone: number,
-        network: provider.key,
-        plan: selectedPlan?.title ?? "",
+        amount: Number(selectedPackage?.price) ?? 0,
+        provider: provider?.name ?? "",
+        number: smartcard,
+        customer: customerName ?? "",
+        package: selectedPackage?.name ?? "",
       });
-
-      setIsLoading(false);
-      setPinVisible(false);
-      setPinError("");
 
       if (!res) {
         router.push({
-          pathname: "/top-up-status",
+          pathname: "/tv-sub-status",
           params: {
-            phone: number,
-            amount: selectedPlan?.amount ?? 0,
+            amount: selectedPackage?.price ?? "0",
+            provider: provider?.name ?? "",
+            smartcard: smartcard ?? "",
+            customerName: customerName ?? "",
+            package: selectedPackage?.name ?? "",
             reference: "",
-            date: Date().toString(),
+            date: new Date().toISOString(),
             status: "failed",
-            method: "Data Top-Up",
-            plan: selectedPlan?.title ?? "",
           },
         });
         return;
       }
 
-      fetchUser(user?.id ?? "");
-      router.back();
       router.push({
-        pathname: "/top-up-status",
-        params: { ...res },
+        pathname: "/tv-sub-status",
+        params: { ...res, smartcard: res.number, customerName: res.customer },
       });
-    } catch (e) {
-      setPinError("Invalid PIN");
-      Vibration.vibrate(200);
-    } finally {
-      setLoading(false);
-      setIsLoading(false);
-    }
+    });
   };
+
+  useEffect(() => {
+    setSmartcard("");
+    setCustomerName("");
+    setSelectedPackage(null);
+  }, [provider?.name]);
+
+  const packages = getPlan(provider?.key ?? "");
 
   return (
     <View
       style={[
         styles.page,
-        { backgroundColor: isDark ? colors.background : "#F6F7F9" },
+        { backgroundColor: isDark ? colors.background : "#F4F5F7" },
       ]}
     >
-      {/* ================= TOP BAR ================= */}
+      {/* TOP BAR */}
       <View
         style={[
           styles.topBar,
           {
             paddingTop: insets.top + 12,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
+            backgroundColor: isDark ? colors.background : "#F4F5F7",
           },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Feather name="arrow-left" size={22} color={colors.text} />
-        </TouchableOpacity>
-
-        <Text style={[styles.title, { color: colors.text }]}>TV</Text>
-
         <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: "/history",
-              params: { type: "tv" },
-            })
-          }
+          style={styles.backButton}
+          onPress={() => router.back()}
         >
-          <Text style={[styles.history, { color: colors.primary }]}>
-            History
-          </Text>
+          <Feather name="arrow-left" size={20} color={colors.text} />
         </TouchableOpacity>
       </View>
 
-      <KeyboardAwareScrollView
-        enableOnAndroid
-        keyboardShouldPersistTaps="handled"
-        extraScrollHeight={120} // 👈 THIS controls how much it scrolls
-        contentContainerStyle={{
-          paddingTop: 16,
-          paddingBottom: 220,
-        }}
+      {/* SCROLLABLE CONTENT */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* =============== PROVIDER SELECTOR ================*/}
-        {/* Network selector */}
-        <View
-          style={{
-            padding: 12,
-            backgroundColor: colors.card,
-            marginBottom: 10,
-          }}
-        >
+        <Text style={[styles.title, { color: colors.text }]}>Cable TV</Text>
+
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          Purchase cable TV subscriptions
+        </Text>
+
+        {/* SERVICE PROVIDER */}
+        <View style={styles.fieldContainer}>
+          <Text style={[styles.label, { color: colors.textMuted }]}>
+            Service Provider
+          </Text>
+
           <TouchableOpacity
             style={[
-              styles.networkSelector,
+              styles.selectBox,
               {
-                paddingBottom: 5,
-                borderBottomWidth: 1,
-                borderBottomColor: colors.border,
+                borderColor: colors.border,
+                backgroundColor: isDark ? colors.card : "#FFFFFF",
               },
-            ]} // isDark ? "#333" : "#EEE"
-            onPress={() => setProviderModal(true)}
+            ]}
+            activeOpacity={0.8}
+            onPress={() => setShowProviderSheet(true)}
           >
-            <View style={styles.networkLogo}>
-              <Image
-                source={provider.image}
-                style={styles.networkLogo}
-                resizeMode="contain"
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colors.textPrimary, fontWeight: "700" }}>
-                {provider.name}
-              </Text>
-            </View>
-            <Feather
-              name="chevron-right"
-              size={18}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
+            <Text
+              style={{
+                color: provider ? colors.text : colors.textMuted,
+              }}
+            >
+              {provider?.name || "Choose Service Provider"}
+            </Text>
 
-          {/*  */}
+            <Feather name="chevron-down" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
 
-        {/* ================= NUMBER SELECTOR ================= */}
-        <View
-          style={[
-            {
-              backgroundColor: colors.card,
-            },
-          ]}
-        >
-          <Text style={{ color: colors.textSecondary, marginBottom: 15 }}>
-            Smartcard Number
-          </Text>
+        {/* SMARTCARD NUMBER */}
+        {provider && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              {provider.key === "showmax" ? "Phone Number" : "Smartcard Number"}
+            </Text>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 30,
-              paddingBottom: 10,
-              marginBottom: 10,
-              borderBottomWidth: 1,
-              paddingLeft: 8,
-              borderBottomColor:
-                !loading && accountError
-                  ? colors.danger
-                  : isDark
-                    ? "#333"
-                    : "#EEE",
-            }}
-          >
-            {/* Phone input */}
             <TextInput
-              value={number}
-              onChangeText={(t) => setNumber(t.replace(/[^0-9]/g, ""))}
-              placeholder="Enter Your Smartcard Number"
-              placeholderTextColor={colors.muted}
+              placeholder={
+                provider.key === "showmax"
+                  ? "Enter recipient phone number"
+                  : `Enter ${provider.name || "Cable TV"} smartcard number`
+              }
+              placeholderTextColor={colors.textMuted}
+              value={smartcard}
               keyboardType="number-pad"
-              // maxLength={13}
-              style={[styles.numberInput, { color: colors.text }]}
+              onChangeText={fetchSmartcardName}
+              style={[
+                styles.input,
+                {
+                  borderColor:
+                    error && !customerName ? colors.danger : colors.border,
+                  backgroundColor: isDark ? colors.card : "#FFFFFF",
+                  color: colors.text,
+                },
+              ]}
             />
 
-            {/* clear number */}
-            {number && (
-              <TouchableOpacity
-                onPress={() => setNumber("")}
-                style={{
-                  height: 22,
-                  width: 22,
-                  borderRadius: "50%",
-                  backgroundColor: colors.textSecondary,
-                  alignContent: "center",
-                }}
-              >
-                <Feather name="x" size={20} color="transparent" />
-              </TouchableOpacity>
+            {/* Loading State */}
+            {loadingName && (
+              <View style={{ marginTop: 8, maxWidth: 40 }}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
             )}
 
-            {/* find account */}
-            {number.length >= 5 && (
-              <TouchableOpacity
-                onPress={() => getAccountDetails()}
+            {/* Error */}
+            {!loadingName && error && !customerName && (
+              <Text
                 style={{
-                  height: 28,
-                  borderRadius: "25",
-                  backgroundColor: colors.primary,
-                  alignContent: "center",
-                  paddingHorizontal: 10,
+                  color: colors.danger,
+                  marginTop: 6,
+                  fontSize: 12,
                 }}
               >
-                <Text style={{ color: isDark ? "#000" : "#fff" }}>Proceed</Text>
-              </TouchableOpacity>
+                {error}
+              </Text>
+            )}
+
+            {/* Success Name */}
+            {customerName && !loadingName && (
+              <Text
+                style={{
+                  color: colors.accent,
+                  marginTop: 8,
+                  fontWeight: "700",
+                }}
+              >
+                {customerName}
+              </Text>
             )}
           </View>
+        )}
 
-          {accountError && (
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
-            >
-              <View
-                style={{
-                  height: 16,
-                  width: 16,
-                  borderRadius: "50%",
-                  backgroundColor: colors.danger,
-                  alignContent: "center",
-                }}
-              >
-                <Feather name="x" size={14} color="#fff" />
-              </View>
-              <Text style={{ color: colors.danger }}>{accountError}</Text>
-            </View>
-          )}
-        </View>
+        {/* PACKAGE SELECT (ONLY IF NAME FOUND) */}
+        {customerName && (
+          <View style={styles.fieldContainer}>
+            <Text style={[styles.label, { color: colors.textMuted }]}>
+              Select Package
+            </Text>
 
-        {/* ================= AMOUNT SELECTOR ================= */}
-        <AmountSelector
-          isDark={isDark}
-          setSelectedPlan={setSelectedPlan}
-          accountDetails={accountDetails}
-          provider={provider.key}
-          setPayModal={() => setPayModal(true)}
-        />
-
-        {/* ================= EVENT / REWARD ================= */}
-        <LinearGradient
-          colors={["#6D5FFD", "#8E7CFF"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.rewardBox}
-        >
-          <Text style={styles.rewardTitle}>Power Your Internet Life</Text>
-          <Text style={styles.rewardText}>
-            Recharge your data now and get massive rewards
-          </Text>
-        </LinearGradient>
-
-        {/* ================= SERVICE ================= */}
-        {/* <Service /> */}
-      </KeyboardAwareScrollView>
-
-      {/* ================= NETWORK MODAL ================= */}
-      <ProviderSelector
-        providerModal={providerModal}
-        setProviderModal={setProviderModal}
-        provider={provider}
-        setProvider={setProvider}
-      />
-
-      {/* ================= PAYMENT MODAL ================= */}
-      <PaymentModal
-        visible={payModal}
-        onClose={() => setPayModal(false)}
-        type="data"
-        dataBundle={selectedPlan?.title}
-        amount={Number(selectedPlan?.amount)}
-        networkLogo={provider.image}
-        recipient={number}
-        userBalance={userBalance}
-        onPay={handleConfirmPayment}
-      />
-
-      <PinModal
-        visible={pinVisible}
-        onClose={() => setPinVisible(false)}
-        onComplete={handlePinComplete}
-        error={pinError}
-        isLoading={isLoading}
-      />
-    </View>
-  );
-}
-
-type Bundle = {
-  bundle: number;
-  size: string;
-  duration: string;
-  amount: number;
-  title: string;
-  category: string;
-  addons?: string;
-};
-
-const categories = [
-  "HOT",
-  "Daily",
-  "Weekly",
-  "Monthly",
-  "3 Months+",
-  "Social",
-  "ROUTER",
-  "WIFI",
-  "Other",
-];
-
-interface AmountSelectorProps {
-  isDark: boolean;
-  accountDetails: string;
-  provider: string;
-  setSelectedPlan: (plan: Bundle | null) => void;
-  setPayModal: () => void;
-}
-
-export const getBundles = (network: string): Bundle[] => {
-  switch (network.toLowerCase()) {
-    case "mtn":
-      return mtn_bundles;
-    case "airtel":
-      return airtel_bundles;
-    case "glo":
-      return glo_bundles;
-    case "9mobile":
-    case "tmobile":
-      return tmobile_bundles;
-    default:
-      console.warn(`No bundles found for network: ${network}`);
-      return [];
-  }
-};
-
-export const AmountSelector = ({
-  isDark,
-  accountDetails,
-  provider,
-  setSelectedPlan,
-  setPayModal,
-}: AmountSelectorProps) => {
-  const { colors } = useTheme();
-
-  const [selectedCategory, setSelectedCategory] = useState("HOT");
-
-  const filteredBundles = getBundles(provider).filter(
-    (b) => b.category === selectedCategory,
-  );
-
-  const numColumns = 2;
-  const ITEM_SPACING = 8;
-  const screenWidth = Dimensions.get("window").width;
-
-  // Calculate item width taking spacing into account
-  const itemWidth =
-    (screenWidth - 64 - ITEM_SPACING * (numColumns - 1)) / numColumns;
-
-  return (
-    <View style={[styles.card, { backgroundColor: colors.card }]}>
-      <Text style={[styles.cardTitle, { color: colors.text }]}>TV Plans</Text>
-
-      {/* ================= CATEGORY TABS ================= */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingVertical: 8, marginBottom: 15 }}
-      >
-        {categories.map((cat) => {
-          const isSelected = cat === selectedCategory;
-          return (
             <TouchableOpacity
-              key={cat}
-              onPress={() => {
-                setSelectedCategory(cat);
-                setSelectedPlan(null);
-              }}
-              style={{ marginRight: 16 }}
+              style={[
+                styles.selectBox,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: isDark ? colors.card : "#FFFFFF",
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={() => setShowPackageSheet(true)}
             >
               <Text
                 style={{
-                  fontWeight: isSelected ? "600" : "400",
-                  color: isSelected ? colors.primary : colors.text,
-                  textDecorationLine: isSelected ? "underline" : "none",
-                  textDecorationStyle: "solid",
-                  textDecorationColor: colors.primary,
-                  textAlign: "center",
+                  color: selectedPackage ? colors.text : colors.textMuted,
                 }}
               >
-                {cat}
+                {selectedPackage?.name || "Choose your preferred package"}
               </Text>
+
+              <Feather name="chevron-down" size={18} color={colors.textMuted} />
             </TouchableOpacity>
-          );
-        })}
+          </View>
+        )}
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
-      {/* ================= BUNDLE CARDS ================= */}
-      <FlatList
-        data={filteredBundles}
-        keyExtractor={(item) => item.title}
-        numColumns={numColumns}
-        scrollEnabled={false}
-        columnWrapperStyle={{
-          justifyContent: "flex-start", // use flex-start for spacing via margin
-          marginBottom: ITEM_SPACING,
-        }}
-        renderItem={({ item, index }) => {
-          // Add right margin for all but the last column
-          const isLastColumn = (index + 1) % numColumns === 0;
-          return (
-            <TouchableOpacity
-              style={[
-                styles.bundleCard,
-                {
-                  width: itemWidth,
-                  marginRight: isLastColumn ? 0 : ITEM_SPACING,
-                  backgroundColor: isDark ? "#2A2A2A" : "#F1F2F4",
-                },
-              ]}
-              onPress={() => {
-                if (accountDetails) {
-                  setSelectedPlan(item);
-                  setPayModal();
-                }
-              }}
-            >
-              <View style={styles.bundleDetails}>
-                <Text
-                  style={{
-                    fontWeight: "600",
-                    color: colors.text,
-                    marginBottom: 6,
-                    textAlign: "center",
-                  }}
-                >
-                  {item.size}
-                </Text>
-                <Text
-                  style={{ color: colors.muted, fontSize: 12, marginBottom: 6 }}
-                >
-                  {item.duration}
-                </Text>
-                <Text
-                  style={{ color: colors.muted, fontSize: 12, marginBottom: 6 }}
-                >
-                  ₦{item.amount}
-                </Text>
-              </View>
+      {/* FIXED PROCEED BUTTON */}
+      <View
+        style={[
+          {
+            paddingBottom: insets.bottom + 5,
+            paddingHorizontal: 20,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          disabled={!canProceed}
+          onPress={handleProceed}
+          style={[
+            styles.button,
+            { backgroundColor: canProceed ? colors.accent : colors.muted },
+          ]}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.buttonText}>Proceed</Text>
+        </TouchableOpacity>
+      </View>
 
-              {item.addons && (
-                <View
-                  style={[
-                    styles.addonsContainer,
-                    { backgroundColor: "#f7a02e32" },
-                  ]}
-                >
-                  <Text
-                    style={{ fontSize: 12, color: "#f7a02e" }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {item.addons}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          );
+      <ProviderBottomSheet
+        visible={showProviderSheet}
+        onClose={() => setShowProviderSheet(false)}
+        onSelect={(v) => {
+          setProvider(v);
         }}
+        providers={TV_PROVIDERS}
+      />
+
+      <PackageBottomSheet
+        visible={showPackageSheet}
+        onClose={() => setShowPackageSheet(false)}
+        onSelect={(v) => {
+          setSelectedPackage(v);
+        }}
+        packages={packages.map((p) => ({
+          key: p.title,
+          name: p.title,
+          price: p.amount.toString(),
+        }))}
+      />
+
+      <CableTvConfirmationModal
+        visible={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        amount={Number(selectedPackage?.price)}
+        providerName={provider?.name ?? ""}
+        providerLogo={provider?.image ?? ""}
+        smartcardNumber={smartcard}
+        customerName={customerName ?? ""}
+        packageName={selectedPackage?.name ?? ""}
+        userBalance={wallet?.balance ?? ""}
+        onPay={handlePay}
       />
     </View>
   );
-};
-
-const Service = () => {
-  const { colors } = useTheme();
-  return (
-    <View style={[styles.card, { backgroundColor: colors.card }]}>
-      <Text style={[styles.cardTitle, { color: colors.text }]}>
-        More Events
-      </Text>
-
-      <TouchableOpacity style={styles.serviceRow}>
-        <View style={[styles.serviceIcon, { borderColor: colors.muted }]}>
-          <Feather name="phone" size={18} color={colors.muted} />
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontWeight: "600", color: colors.text }}>
-            USSD enquiry
-          </Text>
-          <Text style={{ color: colors.muted, fontSize: 12 }}>Coming soon</Text>
-        </View>
-
-        <Feather name="chevron-right" size={20} color={colors.text} />
-      </TouchableOpacity>
-    </View>
-  );
-};
+}
 
 const styles = StyleSheet.create({
-  page: { flex: 1 },
+  page: {
+    flex: 1,
+  },
+
   topBar: {
-    width: "100%",
+    paddingHorizontal: 20,
+    paddingBottom: 8,
+  },
+
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.05)",
+  },
+
+  scrollContent: {
+    padding: 20,
+  },
+
+  title: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 30,
+  },
+
+  fieldContainer: {
+    marginBottom: 24,
+  },
+
+  label: {
+    fontSize: 13,
+    marginBottom: 8,
+    fontWeight: "500",
+  },
+
+  input: {
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    fontSize: 15,
+  },
+
+  selectBox: {
+    height: 56,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  title: { fontSize: 18, fontWeight: "600" },
-  history: { fontSize: 14, fontWeight: "500" },
-
-  rewardBox: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  rewardTitle: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  rewardText: { color: "#EDEBFF", marginTop: 4 },
-
-  numberBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  networkSelector: { flexDirection: "row", alignItems: "center", gap: 6 },
-  networkLogo: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "#EEE",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  divider: { width: 1, height: 24, marginHorizontal: 12 },
-  numberInput: { flex: 1, fontSize: 16, fontWeight: "bold" },
-
-  card: {
-    margin: 16,
-    borderRadius: 16,
-    padding: 16,
-  },
-  cardTitle: { fontSize: 15, fontWeight: "600", marginBottom: 12 },
-  bundleGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  bundleCard: {
-    // width: "30%",
-    borderRadius: 12,
-    // marginBottom: 12,
-  },
-  bundleDetails: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingTop: 15,
-  },
-  addonsContainer: {
-    marginTop: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  payBtn: {
-    borderRadius: 999,
-    paddingVertical: 12,
   },
 
-  serviceRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  serviceIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
+  button: {
+    height: 50,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
 
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "flex-end",
-  },
-  networkModal: {
-    padding: 16,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  networkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    gap: 12,
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });

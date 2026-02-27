@@ -36,6 +36,40 @@ export type DataReceipt = {
   method: "Data Purchase"; // fixed method string
 };
 
+export type CableTVReceipt = {
+  provider: string;
+  number: string;
+  customer: string;
+  package: string;
+  amount: string;
+  reference: string;
+  date: string;
+  status: string;
+  method: "Cable TV Purchase";
+};
+
+export type ElectricityReceipt = {
+  provider: string;
+  number: string;
+  customer: string;
+  amount: string;
+  reference: string;
+  date: string;
+  status: string;
+  method: "Electricity Purchase";
+};
+
+export type BettingReceipt = {
+  provider: string;
+  number: string;
+  customer: string;
+  amount: string;
+  reference: string;
+  date: string;
+  status: string;
+  method: "Betting Purchase";
+};
+
 export type WithdrawalReceipt = {
   amount: string; // withdrawn amount, formatted as string
   account_number: string; // destination account number
@@ -131,6 +165,94 @@ export async function purchaseData(data: {
   }
 }
 
+export async function purchaseCableTv(data: {
+  userId: string;
+  provider: string;
+  number: string;
+  customer: string;
+  package: string;
+  amount: number;
+}): Promise<CableTVReceipt | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+  const toast = useToastStore.getState();
+
+  try {
+    showLoading("Purchasing Cable TV");
+
+    const res: any = await walletApi.purchaseCableTv(data);
+
+    if (!res.status) return null;
+
+    return res.receipt ?? null;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
+export async function purchaseElectricity(data: {
+  userId: string;
+  provider: string;
+  number: string;
+  customer: string;
+  amount: number;
+}): Promise<ElectricityReceipt | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+  const toast = useToastStore.getState();
+
+  try {
+    showLoading("Purchasing Electricity");
+
+    const res: any = await walletApi.purchaseElectricity(data);
+
+    if (!res.status) return null;
+
+    return res.receipt ?? null;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
+export async function purchaseBetting(data: {
+  userId: string;
+  provider: string;
+  number: string;
+  customer: string;
+  amount: number;
+}): Promise<BettingReceipt | null> {
+  const { showLoading, hideLoading } = useUIStore.getState();
+  const toast = useToastStore.getState();
+
+  try {
+    showLoading("Purchasing Betting");
+
+    const res: any = await walletApi.purchaseBetting(data);
+
+    if (!res.status) return null;
+
+    return res.receipt ?? null;
+  } catch (error: any) {
+    toast.show({
+      message: error.message,
+      type: "error",
+    });
+    return null;
+  } finally {
+    hideLoading();
+  }
+}
+
 export async function lookUpNumber(data: {
   phone: string;
 }): Promise<string | null> {
@@ -207,7 +329,13 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
         ? `Airtime purchase`
         : typeOverride === "data"
           ? "Mobile Data purchase"
-          : capitalizeFirst(typeOverride)
+          : typeOverride === "cable_tv"
+            ? "Cable TV purchase"
+            : typeOverride === "electricity"
+              ? "Electricity purchase"
+              : typeOverride === "betting"
+                ? "Betting purchase"
+                : capitalizeFirst(typeOverride)
       : tx.type === "debit"
         ? "Transfer"
         : tx.type === "credit"
@@ -246,6 +374,15 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
         mapTx(tx, "airtime"),
       ),
       ...(wallet.dataTransactions ?? []).map((tx: any) => mapTx(tx, "data")),
+      ...(wallet.cableTVTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "cable_tv"),
+      ),
+      ...(wallet.electricityTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "electricity"),
+      ),
+      ...(wallet.bettingTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "betting"),
+      ),
       ...(wallet.withdrawTransactions ?? []).map((tx: any) =>
         mapTx(tx, "withdrawal"),
       ),
@@ -260,6 +397,24 @@ const mapWalletResponse = (apiResponse: any): WalletDetails => {
 
     dataTransactions: [
       ...(wallet.dataTransactions ?? []).map((tx: any) => mapTx(tx, "data")),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+    cableTVTransactions: [
+      ...(wallet.cableTVTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "cable_tv"),
+      ),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+    electricityTransactions: [
+      ...(wallet.electricityTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "electricity"),
+      ),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+
+    bettingTransactions: [
+      ...(wallet.bettingTransactions ?? []).map((tx: any) =>
+        mapTx(tx, "betting"),
+      ),
     ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
 
     withdrawTransactions: [

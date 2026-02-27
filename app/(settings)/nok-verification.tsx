@@ -74,7 +74,7 @@ export default function NextOfKinVerificationFlow() {
         {step === "intro" && (
           <View style={styles.center}>
             <Image
-              source={require("@/assets/images/partial-react-logo.png")}
+              source={require("@/assets/images/nok.png")}
               style={styles.image}
               resizeMode="contain"
             />

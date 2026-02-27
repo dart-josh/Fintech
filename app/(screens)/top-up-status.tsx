@@ -38,11 +38,13 @@ export default function TopUpStatusPage() {
       pathname: "/receipt",
       params: {
         id: `tf-${receipt.date}`,
-        type: receipt.plan ? 'Mobile Data Purchase' : 'Airtime Purchase',
+        type: receipt.plan ? "Mobile Data Purchase" : "Airtime Purchase",
         amount: receipt.amount,
         status: receipt.status,
         reference: receipt.reference,
-        description: receipt.plan ? `Mobile Data Purchase for ${receipt.phone}` : `Airtime Purchase for ${receipt.phone}`,
+        description: receipt.plan
+          ? `Mobile Data Purchase for ${receipt.phone}`
+          : `Airtime Purchase for ${receipt.phone}`,
         date: receipt.date,
       },
     });
@@ -140,7 +142,8 @@ export default function TopUpStatusPage() {
           </Text>
 
           <Text style={{ color: colors.textSecondary }}>
-            To {formatNumberSpace(receipt.phone)} {receipt.plan ? `(${receipt.plan})` : ""}
+            To {formatNumberSpace(receipt.phone)}{" "}
+            {receipt.plan ? `(${receipt.plan})` : ""}
           </Text>
         </View>
 
@@ -179,7 +182,9 @@ export default function TopUpStatusPage() {
 
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-              onPress={() => router.back()}
+              onPress={() => {
+                router.back();
+              }}
             >
               <Text style={styles.primaryText}>Try Again</Text>
             </TouchableOpacity>
@@ -197,7 +202,10 @@ export default function TopUpStatusPage() {
 
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-              onPress={() => router.back()}
+              onPress={() => {
+                router.back();
+                router.back();
+              }}
             >
               <Text style={styles.primaryText}>Done</Text>
             </TouchableOpacity>

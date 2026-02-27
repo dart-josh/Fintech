@@ -23,7 +23,7 @@ import {
 } from "@/utils/globalVariables";
 import NetworkSelector from "@/components/NetworkSelector";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import PaymentModal from "@/components/PaymentModal";
+import MobileTopUpConfirmation from "@/components/modals/MobileTopUpConfirmation";
 import { formatNumberSpace } from "@/hooks/format.hook";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/store/user.store";
@@ -284,7 +284,7 @@ export default function DataTopUp() {
       />
 
       {/* ================= PAYMENT MODAL ================= */}
-      <PaymentModal
+      <MobileTopUpConfirmation
         visible={payModal}
         onClose={() => setPayModal(false)}
         type="data"

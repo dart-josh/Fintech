@@ -1,4 +1,3 @@
-import { sendEmailCode } from "@/services/auth.service";
 import { useToastStore } from "@/store/toast.store";
 import { useUserStore } from "@/store/user.store";
 import { useTheme } from "@/theme/ThemeContext";
@@ -6,7 +5,18 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { useRouter } from "expo-router";
 import { useEffect, useRef } from "react";
-import { Animated, Easing, Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Animated,
+  Easing,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function QuickActionModal({
@@ -51,21 +61,104 @@ export default function QuickActionModal({
       slideAnim.setValue(300);
       fadeAnim.setValue(0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   if (!open) return null;
 
-  const actions = [
-  { icon: "send", label: "Send", route: "send" },
-  { icon: "arrow-down-left", label: "Receive", route: "receive" },
-  { icon: "plus-circle", label: "Add Money", route: "modal" },
-  { icon: "phone", label: "Airtime", route: "airtime-top-up" },
-  { icon: "wifi", label: "Data", route: "data-top-up" },
-  { icon: "arrow-up-right", label: "Withdraw", route: "withdraw" },
-  { icon: "lock", label: "Escrow", route: "/escrow-home" },
-];
+  const handleItem = (item: any) => {
+    const toast = useToastStore.getState();
+    const { user } = useUserStore.getState();
+    const route = item.route;
 
+    if (route) {
+      if (item.requirePin) {
+        if (!user?.transaction_pin) {
+          toast.show({
+            type: "warning",
+            message: "Transaction PIN Not set",
+          });
+          router.push("/set-pin-intro");
+          return;
+        }
+      }
+
+      if (route === "modal") {
+        setModalVisible(true);
+      } else {
+        router.push(route);
+      }
+    } else {
+      toast.show({
+        message: "This feature is not yet available.",
+        type: "warning",
+      });
+    }
+  };
+
+  const actions = [
+    {
+      icon: "smartphone",
+      label: "Top Up",
+      route: "mobile-top-up",
+      color: "#2563EB",
+      requirePin: true,
+    },
+    {
+      icon: "activity",
+      label: "Pay Bills",
+      route: "bill-payment",
+      color: "#16A34A",
+      requirePin: true,
+    },
+    {
+      icon: "lock",
+      label: "Escrow",
+      route: "escrow-home",
+      color: "#0F766E",
+      requirePin: true,
+    },
+    {
+      icon: "plus-circle",
+      label: "Add Money",
+      route: "modal",
+      color: "#7C3AED",
+    },
+    {
+      icon: "send",
+      label: "Send",
+      route: "send",
+      color: "#EA580C",
+      requirePin: true,
+    },
+    {
+      icon: "arrow-down-left",
+      label: "Receive",
+      route: "receive",
+      color: "#0891B2",
+    },
+    {
+      icon: "arrow-up-right",
+      label: "Withdraw",
+      route: "withdraw",
+      color: "#DC2626",
+      requirePin: true,
+    },
+    {
+      icon: "tv",
+      label: "TV",
+      route: "tv-subscription",
+      color: "#9333EA",
+      requirePin: true,
+    },
+    {
+      icon: "zap",
+      label: "Electricity",
+      route: "electricity-top-up",
+      color: "#16A34A",
+      requirePin: true,
+    },
+  ];
 
   return (
     <Modal transparent animationType="none">
@@ -93,66 +186,57 @@ export default function QuickActionModal({
             },
           ]}
         >
-          {actions.map((item) => (
-            <TouchableOpacity
-              key={item.label}
-              style={modalStyles.item}
-              onPress={() => {
-                onClose();
-                const toast = useToastStore.getState();
-                const {user} = useUserStore.getState();
-                const route = item.route;
-                if (route) {
-                  if (
-                    route === "send" ||
-                    route === "airtime-top-up" ||
-                    route === "data-top-up" ||
-                    route === "withdraw" ||
-                    item.label === "Top Up"
-                  ) {
-                    if (!user?.transaction_pin) {
-                      toast.show({
-                        type: "warning",
-                        message: "Transaction PIN Not set",
-                      });
-                      router.push("/set-pin-intro");
-                      return;
-                    }
-                  }
-
-                  if (route === "modal") {
-                    onClose();
-                    setModalVisible(true);
-                  } else {
-                    requestAnimationFrame(() => onClose());
-                    router.push(route);
-                  }
-                } else {
-                  onClose();
-                  toast.show({
-                    message: "This feature is not yet available.",
-                    type: "warning",
-                  });
-                }
-              }}
+          {/* Modern Header */}
+          <View style={modalStyles.headerRow}>
+            <View
+              style={[
+                modalStyles.headerIconWrap,
+                { backgroundColor: colors.primaryContainer },
+              ]}
             >
-              <View
+              <Feather name="grid" size={18} color={colors.primary} />
+            </View>
+
+            <Text style={[modalStyles.headerTitle, { color: colors.text }]}>
+              All Services
+            </Text>
+          </View>
+
+          <ScrollView
+            contentContainerStyle={modalStyles.listArea}
+            showsVerticalScrollIndicator={false}
+          >
+            {actions.map((item) => (
+              <TouchableOpacity
+                key={item.label}
                 style={[
-                  modalStyles.iconWrap,
-                  { backgroundColor: colors.primaryContainer },
+                  modalStyles.itemCard,
+                  { backgroundColor: colors.background + "90" },
                 ]}
+                onPress={() => {
+                  onClose();
+                  handleItem(item);
+                }}
               >
-                <Feather
-                  name={item.icon as any}
-                  size={22}
-                  color={colors.primary}
-                />
-              </View>
-              <Text style={[modalStyles.label, { color: colors.text }]}>
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View
+                  style={[
+                    modalStyles.iconWrapNew,
+                    { backgroundColor: item.color + "20" },
+                  ]}
+                >
+                  <Feather
+                    name={item.icon as any}
+                    size={18}
+                    color={item.color}
+                  />
+                </View>
+
+                <Text style={[modalStyles.labelNew, { color: colors.text }]}>
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
         </Animated.View>
 
         {/* Close Button */}
@@ -187,20 +271,58 @@ const modalStyles = StyleSheet.create({
     position: "absolute",
     left: 20,
     right: 20,
-    borderRadius: 24,
+    borderRadius: 28,
     padding: 20,
+    maxHeight: "60%",
+  },
+
+  listArea: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
+    overflowY: "auto",
   },
-  item: { width: "30%", alignItems: "center", marginBottom: 20 },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+
+  /* Header */
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  headerIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 6,
+    marginRight: 10,
   },
-  label: { fontSize: 12, fontWeight: "600", textAlign: "center" },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+  },
+
+  /* Grid */
+  itemCard: {
+    width: "30%",
+    borderRadius: 15,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  iconWrapNew: {
+    width: 42,
+    height: 42,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+
+  labelNew: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "center",
+  },
 });

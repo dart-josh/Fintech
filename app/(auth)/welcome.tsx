@@ -15,17 +15,17 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const slides = [
   {
-    image: require("@/assets/images/partial-react-logo.png"), // replace with your image
+    image: require("@/assets/images/fast.png"), // replace with your image
     header: "Super fast banking experience",
     text: "Enjoy instant access to your funds effortlessly anywhere, anytime.",
   },
   {
-    image: require("@/assets/images/partial-react-logo.png"),
+    image: require("@/assets/images/secure.png"),
     header: "Secure and reliable",
     text: "Your money is always safe and transactions are protected.",
   },
   {
-    image: require("@/assets/images/partial-react-logo.png"),
+    image: require("@/assets/images/track.png"),
     header: "Track your spending",
     text: "Get insights and manage your finances like a pro.",
   },
